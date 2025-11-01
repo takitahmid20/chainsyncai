@@ -286,3 +286,4 @@
 | Public      | Landing, Features, Pricing, Blog, Login            | Marketing and onboarding              |
 
 # chainsyncai
+# chainsyncai
