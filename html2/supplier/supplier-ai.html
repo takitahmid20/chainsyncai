@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Assistant - ChainSync AI</title>
+    <link rel="stylesheet" href="supplier-styles.css">
+    <style>
+        /* AI Assistant specific styles */
+        .ai-header-card {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 24px;
+            color: white;
+            text-align: center;
+        }
+
+        .ai-header-card h1 {
+            font-size: 24px;
+            font-weight: 700;
+            margin: 0 0 8px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .ai-header-card h1 svg {
+            width: 28px;
+            height: 28px;
+        }
+
+        .ai-header-card p {
+            font-size: 14px;
+            margin: 0;
+            opacity: 0.95;
+        }
+
+        .ai-subtitle {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-top: 16px;
+            backdrop-filter: blur(10px);
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        /* Quick Actions */
+        .quick-actions-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+
+        .quick-action-btn {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 16px 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: left;
+        }
+
+        .quick-action-btn:active {
+            transform: scale(0.98);
+            background: #f9fafb;
+        }
+
+        .quick-action-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+        }
+
+        .quick-action-icon svg {
+            width: 20px;
+            height: 20px;
+            stroke: #6366f1;
+        }
+
+        .quick-action-btn h4 {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0 0 4px 0;
+        }
+
+        .quick-action-btn p {
+            font-size: 11px;
+            color: #6b7280;
+            margin: 0;
+            line-height: 1.4;
+        }
+
+        /* Example Queries */
+        .examples-section {
+            margin-bottom: 24px;
+        }
+
+        .examples-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .example-query {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 12px 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .example-query:active {
+            transform: scale(0.98);
+            border-color: #6366f1;
+            background: #f5f3ff;
+        }
+
+        .example-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .example-icon svg {
+            width: 16px;
+            height: 16px;
+            stroke: #8b5cf6;
+        }
+
+        .example-text {
+            flex: 1;
+            font-size: 13px;
+            color: #374151;
+            font-weight: 500;
+        }
+
+        .example-arrow {
+            width: 20px;
+            height: 20px;
+            color: #9ca3af;
+        }
+
+        /* Chat Container */
+        .chat-container {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 20px;
+            height: 400px;
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 80px;
+            overflow: hidden;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .chat-message {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+        }
+
+        .chat-message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .message-avatar.ai {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        }
+
+        .message-avatar.user {
+            background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+        }
+
+        .message-avatar svg {
+            width: 20px;
+            height: 20px;
+            stroke: white;
+        }
+
+        .message-bubble {
+            max-width: 75%;
+            padding: 12px 14px;
+            border-radius: 16px;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .message-bubble.ai {
+            background: #f3f4f6;
+            color: #1f2937;
+            border-radius: 16px 16px 16px 4px;
+        }
+
+        .message-bubble.user {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            color: white;
+            border-radius: 16px 16px 4px 16px;
+        }
+
+        .message-time {
+            font-size: 10px;
+            color: #9ca3af;
+            margin-top: 4px;
+            text-align: center;
+        }
+
+        /* Data Cards in Chat */
+        .data-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 12px;
+            margin-top: 8px;
+        }
+
+        .data-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .data-card-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .data-card-badge {
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 8px;
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        .data-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .data-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 8px;
+            background: #f9fafb;
+            border-radius: 8px;
+        }
+
+        .data-item-name {
+            font-size: 11px;
+            color: #374151;
+            font-weight: 500;
+        }
+
+        .data-item-value {
+            font-size: 11px;
+            font-weight: 600;
+            color: #6366f1;
+        }
+
+        /* Chat Input */
+        .chat-input-container {
+            padding: 16px;
+            border-top: 2px solid #f3f4f6;
+            background: white;
+        }
+
+        .chat-input-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 14px;
+            color: #1f2937;
+            transition: all 0.3s;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: #6366f1;
+            background: #f9fafb;
+        }
+
+        .chat-input::placeholder {
+            color: #9ca3af;
+        }
+
+        .send-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+
+        .send-btn:active {
+            transform: scale(0.95);
+        }
+
+        .send-btn svg {
+            width: 20px;
+            height: 20px;
+            stroke: white;
+            fill: white;
+        }
+
+        /* Empty State */
+        .empty-state {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        .empty-state-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+
+        .empty-state-icon svg {
+            width: 40px;
+            height: 40px;
+            stroke: #6366f1;
+        }
+
+        .empty-state h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0 0 8px 0;
+        }
+
+        .empty-state p {
+            font-size: 13px;
+            color: #6b7280;
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        /* Typing Indicator */
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 12px 16px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #9ca3af;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+                opacity: 0.7;
+            }
+            30% {
+                transform: translateY(-10px);
+                opacity: 1;
+            }
+        }
+
+        /* Capabilities Grid */
+        .capabilities-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+
+        .capability-card {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .capability-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            margin: 0 auto 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .capability-icon.purple {
+            background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);
+        }
+
+        .capability-icon.blue {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+        }
+
+        .capability-icon.green {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+        }
+
+        .capability-icon.yellow {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        }
+
+        .capability-icon svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .capability-icon.purple svg {
+            stroke: #8b5cf6;
+        }
+
+        .capability-icon.blue svg {
+            stroke: #3b82f6;
+        }
+
+        .capability-icon.green svg {
+            stroke: #10b981;
+        }
+
+        .capability-icon.yellow svg {
+            stroke: #f59e0b;
+        }
+
+        .capability-card h4 {
+            font-size: 12px;
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0 0 4px 0;
+        }
+
+        .capability-card p {
+            font-size: 10px;
+            color: #6b7280;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Top Navbar -->
+        <nav class="top-navbar">
+            <button class="hamburger-btn" onclick="toggleSidebar()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+            <div class="navbar-brand">
+                <h2>AI Assistant</h2>
+            </div>
+            <div class="navbar-actions">
+                <button class="nav-action-btn notification-btn" onclick="showNotifications()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <span class="notification-badge">1</span>
+                </button>
+                <button class="nav-action-btn avatar-btn" onclick="openProfile()">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='16' fill='%236366f1'/%3E%3Ctext x='16' y='21' text-anchor='middle' fill='white' font-size='14' font-weight='bold'%3ES%3C/text%3E%3C/svg%3E" alt="Profile">
+                </button>
+            </div>
+        </nav>
+
+        <!-- Sidebar Menu -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-profile">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Ccircle cx='30' cy='30' r='30' fill='%236366f1'/%3E%3Ctext x='30' y='38' text-anchor='middle' fill='white' font-size='24' font-weight='bold'%3ES%3C/text%3E%3C/svg%3E" alt="Profile">
+                    <div class="sidebar-user-info">
+                        <h3>Unilever BD</h3>
+                        <p>contact@unilever.com</p>
+                    </div>
+                </div>
+                <button class="sidebar-close" onclick="toggleSidebar()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="supplier-dashboard.html" class="sidebar-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
+                <a href="supplier-orders.html" class="sidebar-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 11l3 3L22 4"></path>
+                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                    </svg>
+                    <span>Orders</span>
+                </a>
+                <a href="supplier-products.html" class="sidebar-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                        <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                        <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                    </svg>
+                    <span>Products & Inventory</span>
+                </a>
+                <a href="supplier-retailers.html" class="sidebar-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    <span>Retailers</span>
+                </a>
+                <a href="supplier-finance.html" class="sidebar-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="1" x2="12" y2="23"></line>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                    <span>Finance & Payments</span>
+                </a>
+                <a href="supplier-logistics.html" class="sidebar-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="1" y="3" width="15" height="13"></rect>
+                        <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+                        <circle cx="5.5" cy="18.5" r="2.5"></circle>
+                        <circle cx="18.5" cy="18.5" r="2.5"></circle>
+                    </svg>
+                    <span>Logistics & Delivery</span>
+                </a>
+                <a href="supplier-analytics.html" class="sidebar-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                    </svg>
+                    <span>Analytics & Reports</span>
+                </a>
+                <a href="supplier-ai.html" class="sidebar-nav-item active">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                        <path d="M2 17l10 5 10-5"></path>
+                        <path d="M2 12l10 5 10-5"></path>
+                    </svg>
+                    <span>AI Assistant</span>
+                </a>
+                <a href="settings.html" class="sidebar-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M12 1v6m0 6v6M4.93 4.93l4.24 4.24m5.66 5.66l4.24 4.24M1 12h6m6 0h6M4.93 19.07l4.24-4.24m5.66-5.66l4.24-4.24"></path>
+                    </svg>
+                    <span>Settings</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- AI Header -->
+            <div class="ai-header-card">
+                <h1>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                        <path d="M2 17l10 5 10-5"></path>
+                        <path d="M2 12l10 5 10-5"></path>
+                    </svg>
+                    Ask ChainSync AI
+                </h1>
+                <p>Chat with your business data</p>
+                <div class="ai-subtitle">
+                    Get instant insights about your orders, products, retailers, inventory, sales trends, and more. Just ask in natural language!
+                </div>
+            </div>
+
+            <!-- AI Capabilities -->
+            <div class="section-header">
+                <h2>What I Can Do</h2>
+            </div>
+
+            <div class="capabilities-grid">
+                <div class="capability-card">
+                    <div class="capability-icon purple">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                        </svg>
+                    </div>
+                    <h4>Sales Analysis</h4>
+                    <p>Revenue, trends, forecasts</p>
+                </div>
+
+                <div class="capability-card">
+                    <div class="capability-icon blue">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        </svg>
+                    </div>
+                    <h4>Retailer Insights</h4>
+                    <p>Performance, rankings</p>
+                </div>
+
+                <div class="capability-card">
+                    <div class="capability-icon green">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                        </svg>
+                    </div>
+                    <h4>Inventory Check</h4>
+                    <p>Stock levels, alerts</p>
+                </div>
+
+                <div class="capability-card">
+                    <div class="capability-icon yellow">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                        </svg>
+                    </div>
+                    <h4>Recommendations</h4>
+                    <p>Pricing, discounts, restock</p>
+                </div>
+            </div>
+
+            <!-- Example Queries -->
+            <div class="section-header">
+                <h2>Try These Examples</h2>
+            </div>
+
+            <div class="examples-section">
+                <div class="examples-list">
+                    <div class="example-query" onclick="askQuestion('Who will reorder next week?')">
+                        <div class="example-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                            </svg>
+                        </div>
+                        <span class="example-text">"Who will reorder next week?"</span>
+                        <svg class="example-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </div>
+
+                    <div class="example-query" onclick="askQuestion('Show top 5 retailers in Dhaka')">
+                        <div class="example-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                            </svg>
+                        </div>
+                        <span class="example-text">"Show top 5 retailers in Dhaka"</span>
+                        <svg class="example-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </div>
+
+                    <div class="example-query" onclick="askQuestion('Which item needs a discount?')">
+                        <div class="example-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="9" cy="21" r="1"></circle>
+                                <circle cx="20" cy="21" r="1"></circle>
+                                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                            </svg>
+                        </div>
+                        <span class="example-text">"Which item needs a discount?"</span>
+                        <svg class="example-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </div>
+
+                    <div class="example-query" onclick="askQuestion('What is my revenue this month?')">
+                        <div class="example-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="1" x2="12" y2="23"></line>
+                                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                            </svg>
+                        </div>
+                        <span class="example-text">"What is my revenue this month?"</span>
+                        <svg class="example-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </div>
+
+                    <div class="example-query" onclick="askQuestion('Which products are low in stock?')">
+                        <div class="example-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                            </svg>
+                        </div>
+                        <span class="example-text">"Which products are low in stock?"</span>
+                        <svg class="example-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Container -->
+            <div class="section-header">
+                <h2>Conversation</h2>
+                <button class="action-btn" onclick="clearChat()">Clear Chat</button>
+            </div>
+
+            <div class="chat-container">
+                <div class="chat-messages" id="chatMessages">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                        </div>
+                        <h3>Start a Conversation</h3>
+                        <p>Ask me anything about your business data.<br>Try one of the examples above!</p>
+                    </div>
+                </div>
+
+                <div class="chat-input-container">
+                    <div class="chat-input-wrapper">
+                        <input 
+                            type="text" 
+                            class="chat-input" 
+                            id="chatInput" 
+                            placeholder="Ask me anything about your business..."
+                            onkeypress="handleKeyPress(event)"
+                        >
+                        <button class="send-btn" onclick="sendMessage()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="22" y1="2" x2="11" y2="13"></line>
+                                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav">
+            <button class="nav-item" onclick="window.location.href='supplier-dashboard.html'">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                </svg>
+                <span class="nav-label">Home</span>
+            </button>
+            <button class="nav-item" onclick="window.location.href='supplier-orders.html'">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 11l3 3L22 4"></path>
+                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                </svg>
+                <span class="nav-label">Orders</span>
+            </button>
+            <button class="nav-item active">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                    <path d="M2 17l10 5 10-5"></path>
+                    <path d="M2 12l10 5 10-5"></path>
+                </svg>
+                <span class="nav-label">AI Assistant</span>
+            </button>
+            <button class="nav-item" onclick="window.location.href='profile.html'">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                <span class="nav-label">Profile</span>
+            </button>
+        </nav>
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('show');
+            overlay.classList.toggle('show');
+        }
+
+        function showNotifications() {
+            alert('Notifications:\n• AI Assistant is ready to help!');
+        }
+
+        function openProfile() {
+            window.location.href = 'profile.html';
+        }
+
+        function clearChat() {
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                    </div>
+                    <h3>Start a Conversation</h3>
+                    <p>Ask me anything about your business data.<br>Try one of the examples above!</p>
+                </div>
+            `;
+        }
+
+        function askQuestion(question) {
+            document.getElementById('chatInput').value = question;
+            sendMessage();
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+
+            const chatMessages = document.getElementById('chatMessages');
+            
+            // Remove empty state if present
+            const emptyState = chatMessages.querySelector('.empty-state');
+            if (emptyState) {
+                emptyState.remove();
+            }
+
+            // Add user message
+            addMessage('user', message);
+            input.value = '';
+
+            // Show typing indicator
+            showTypingIndicator();
+
+            // Simulate AI response
+            setTimeout(() => {
+                removeTypingIndicator();
+                generateAIResponse(message);
+            }, 1500);
+        }
+
+        function addMessage(type, content, hasData = false) {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message ${type}`;
+
+            const avatar = document.createElement('div');
+            avatar.className = `message-avatar ${type}`;
+            
+            if (type === 'ai') {
+                avatar.innerHTML = `
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                        <path d="M2 17l10 5 10-5"></path>
+                        <path d="M2 12l10 5 10-5"></path>
+                    </svg>
+                `;
+            } else {
+                avatar.innerHTML = `
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                `;
+            }
+
+            const bubble = document.createElement('div');
+            bubble.className = `message-bubble ${type}`;
+            bubble.innerHTML = content;
+
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(bubble);
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function showTypingIndicator() {
+            const chatMessages = document.getElementById('chatMessages');
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'chat-message ai typing-message';
+            typingDiv.innerHTML = `
+                <div class="message-avatar ai">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                        <path d="M2 17l10 5 10-5"></path>
+                        <path d="M2 12l10 5 10-5"></path>
+                    </svg>
+                </div>
+                <div class="message-bubble ai">
+                    <div class="typing-indicator">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                </div>
+            `;
+            chatMessages.appendChild(typingDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function removeTypingIndicator() {
+            const typingMessage = document.querySelector('.typing-message');
+            if (typingMessage) {
+                typingMessage.remove();
+            }
+        }
+
+        function generateAIResponse(question) {
+            const lowerQuestion = question.toLowerCase();
+
+            if (lowerQuestion.includes('reorder') || lowerQuestion.includes('next week')) {
+                const response = `Based on historical patterns and current stock levels, here are the retailers likely to reorder next week:
+                    <div class="data-card">
+                        <div class="data-card-header">
+                            <span class="data-card-title">Expected Reorders (Next 7 Days)</span>
+                            <span class="data-card-badge">5 Retailers</span>
+                        </div>
+                        <div class="data-list">
+                            <div class="data-item">
+                                <span class="data-item-name">Metro Bazaar</span>
+                                <span class="data-item-value">95% Likely</span>
+                            </div>
+                            <div class="data-item">
+                                <span class="data-item-name">Rahman's Mega Store</span>
+                                <span class="data-item-value">87% Likely</span>
+                            </div>
+                            <div class="data-item">
+                                <span class="data-item-name">Smart Mart Express</span>
+                                <span class="data-item-value">82% Likely</span>
+                            </div>
+                            <div class="data-item">
+                                <span class="data-item-name">City Supermarket</span>
+                                <span class="data-item-value">76% Likely</span>
+                            </div>
+                            <div class="data-item">
+                                <span class="data-item-name">Golden Mart</span>
+                                <span class="data-item-value">71% Likely</span>
+                            </div>
+                        </div>
+                    </div>`;
+                addMessage('ai', response);
+            } else if (lowerQuestion.includes('top') && lowerQuestion.includes('dhaka')) {
+                const response = `Here are the top 5 performing retailers in Dhaka based on revenue and order volume:
+                    <div class="data-card">
+                        <div class="data-card-header">
+                            <span class="data-card-title">Top Retailers - Dhaka</span>
+                            <span class="data-card-badge">This Month</span>
+                        </div>
+                        <div class="data-list">
+                            <div class="data-item">
+                                <span class="data-item-name">1. Metro Bazaar</span>
+                                <span class="data-item-value">৳842K</span>
+                            </div>
+                            <div class="data-item">
+                                <span class="data-item-name">2. Rahman's Mega Store</span>
+                                <span class="data-item-value">৳724K</span>
+                            </div>
+                            <div class="data-item">
+                                <span class="data-item-name">3. Smart Mart Express</span>
+                                <span class="data-item-value">৳698K</span>
+                            </div>
+                            <div class="data-item">
+                                <span class="data-item-name">4. City Supermarket</span>
+                                <span class="data-item-value">৳587K</span>
+                            </div>
+                            <div class="data-item">
+                                <span class="data-item-name">5. Golden Mart</span>
+                                <span class="data-item-value">৳524K</span>
+                            </div>
+                        </div>
+                    </div>`;
+                addMessage('ai', response);
+            } else if (lowerQuestion.includes('discount')) {
+                const response = `Based on sales velocity and inventory levels, these products would benefit from promotional pricing:
+                    <div class="data-card">
+                        <div class="data-card-header">
+                            <span class="data-card-title">Discount Recommendations</span>
+                            <span class="data-card-badge">AI Powered</span>
+                        </div>
+                        <div class="data-list">
+                            <div class="data-item">
+                                <span class="data-item-name">Pepsodent Toothpaste</span>
+                                <span class="data-item-value">15% Off</span>
+                            </div>
+                            <div class="data-item">
+                                <span class="data-item-name">Wheel Detergent</span>
+                                <span class="data-item-value">12% Off</span>
+                            </div>
+                            <div class="data-item">
+                                <span class="data-item-name">Fair & Lovely Cream</span>
+                                <span class="data-item-value">10% Off</span>
+                            </div>
+                        </div>
+                    </div>
+                    Reason: Slow-moving items with high stock. Discounts can accelerate sales and prevent overstocking.`;
+                addMessage('ai', response);
+            } else if (lowerQuestion.includes('revenue')) {
+                const response = `Your revenue performance this month is strong! Here's the breakdown:
+                    <div class="data-card">
+                        <div class="data-card-header">
+                            <span class="data-card-title">November 2025 Revenue</span>
+                            <span class="data-card-badge">Current Month</span>
+                        </div>
+                        <div class="data-list">
+                            <div class="data-item">
+                                <span class="data-item-name">Total Revenue</span>
+                                <span class="data-item-value">৳8.4M</span>
+                            </div>
+                            <div class="data-item">
+                                <span class="data-item-name">Growth vs Last Month</span>
+                                <span class="data-item-value">+24.5%</span>
+                            </div>
+                            <div class="data-item">
+                                <span class="data-item-name">Total Orders</span>
+                                <span class="data-item-value">1,247</span>
+                            </div>
+                            <div class="data-item">
+                                <span class="data-item-name">Avg Order Value</span>
+                                <span class="data-item-value">৳674</span>
+                            </div>
+                        </div>
+                    </div>
+                    You're on track to exceed your monthly target! 🎉`;
+                addMessage('ai', response);
+            } else if (lowerQuestion.includes('low') && lowerQuestion.includes('stock')) {
+                const response = `These products are running low and need restocking soon:
+                    <div class="data-card">
+                        <div class="data-card-header">
+                            <span class="data-card-title">Low Stock Alerts</span>
+                            <span class="data-card-badge">Urgent</span>
+                        </div>
+                        <div class="data-list">
+                            <div class="data-item">
+                                <span class="data-item-name">Lux Soap Bar - 125g</span>
+                                <span class="data-item-value">47 units</span>
+                            </div>
+                            <div class="data-item">
+                                <span class="data-item-name">Lifebuoy Hand Wash</span>
+                                <span class="data-item-value">62 units</span>
+                            </div>
+                            <div class="data-item">
+                                <span class="data-item-name">Close-Up Toothpaste</span>
+                                <span class="data-item-value">89 units</span>
+                            </div>
+                        </div>
+                    </div>
+                    Recommendation: Restock these high-demand items within 3-5 days to avoid stockouts.`;
+                addMessage('ai', response);
+            } else {
+                addMessage('ai', `I understand you're asking about "${question}". I can help you with insights about orders, retailers, products, inventory, sales, revenue, and more. Try asking specific questions like:<br><br>
+                    • "What's my best-selling product?"<br>
+                    • "Show retailers with pending orders"<br>
+                    • "Predict next month's sales"<br>
+                    • "Which area has most demand?"<br><br>
+                    How can I assist you today?`);
+            }
+        }
+    </script>
+</body>
+</html>

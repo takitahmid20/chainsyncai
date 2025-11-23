@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Purchase Products - ChainSync AI</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Navigation will be injected here -->
+    <div id="navigationContainer"></div>
+
+    <div class="container with-nav">
+        <div class="scroll-content with-bottom-nav">
+            <!-- Header -->
+            <div style="position: relative; padding: 20px 20px 0 20px; margin-bottom: 20px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;">
+                    <button class="back-button" onclick="window.location.href='retailer-dashboard.html'" style="background: #1a1f3a; border: 1px solid #2a2f45; border-radius: 10px; padding: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                        <svg style="width: 20px; height: 20px; stroke: #00d4ff;" viewBox="0 0 24 24" fill="none" stroke-width="2">
+                            <line x1="19" y1="12" x2="5" y2="12"/>
+                            <polyline points="12 19 5 12 12 5"/>
+                        </svg>
+                    </button>
+                    <h2 style="color: #fff; font-size: 18px; font-weight: 700; margin: 0; flex: 1; text-align: center;">🛒 Purchase Products</h2>
+                    <button class="icon-button" onclick="openCart()" style="background: #1a1f3a; border: 1px solid #2a2f45; border-radius: 10px; padding: 10px; cursor: pointer; position: relative; display: flex; align-items: center; justify-content: center;">
+                        <svg style="width: 20px; height: 20px; stroke: #00d4ff;" viewBox="0 0 24 24" fill="none" stroke-width="2">
+                            <circle cx="9" cy="21" r="1"/>
+                            <circle cx="20" cy="21" r="1"/>
+                            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                        </svg>
+                        <span class="badge" id="cartBadge" style="position: absolute; top: -5px; right: -5px; background: #ff4444; color: white; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 10px; min-width: 18px; text-align: center;">0</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- AI Recommendations Banner -->
+            <div style="margin: 0 20px 20px 20px;">
+                <div class="ai-banner" style="background: linear-gradient(135deg, #00d4ff 0%, #0066cc 100%); padding: 15px; border-radius: 12px; color: white;">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                        <svg style="width: 24px; height: 24px;" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                            <path d="M2 17l10 5 10-5"/>
+                            <path d="M2 12l10 5 10-5"/>
+                        </svg>
+                        <strong style="font-size: 15px;">🤖 AI Smart Buying</strong>
+                    </div>
+                    <p style="font-size: 13px; opacity: 0.95; margin: 0;">Recommended: Restock Product SKU-4429 (45 units left). High demand detected!</p>
+                </div>
+            </div>
+
+            <!-- Search and Filter -->
+            <div style="margin: 0 20px 20px 20px;">
+                <div class="input-group" style="margin-bottom: 12px;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="m21 21-4.35-4.35"/>
+                    </svg>
+                    <input type="text" placeholder="Search products..." id="searchInput" oninput="filterProducts()">
+                </div>
+                <div style="display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px;">
+                    <button class="filter-chip active" onclick="filterCategory('all')">All</button>
+                    <button class="filter-chip" onclick="filterCategory('electronics')">Electronics</button>
+                    <button class="filter-chip" onclick="filterCategory('food')">Food & Beverage</button>
+                    <button class="filter-chip" onclick="filterCategory('hardware')">Hardware</button>
+                    <button class="filter-chip" onclick="filterCategory('cosmetics')">Cosmetics</button>
+                </div>
+            </div>
+
+            <!-- Products Grid -->
+            <div id="productsContainer" style="padding: 0 20px;"></div>
+
+            <!-- Cart Modal -->
+            <div class="modal" id="cartModal">
+                <div class="modal-content" style="max-height: 85vh; overflow-y: auto;">
+                    <div class="modal-header">
+                        <h3>🛒 Your Cart</h3>
+                        <button class="close-button" onclick="closeCart()">×</button>
+                    </div>
+                    <div class="modal-body" id="cartItems"></div>
+                    <div class="modal-footer">
+                        <div style="margin-bottom: 15px;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                <span style="color: #8b92b0;">Subtotal:</span>
+                                <span style="color: #fff; font-weight: 600;" id="cartSubtotal">৳0</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                <span style="color: #8b92b0;">Delivery:</span>
+                                <span style="color: #00ff88;" id="cartDelivery">৳150</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; padding-top: 10px; border-top: 1px solid #2a2f45;">
+                                <span style="color: #fff; font-weight: 600; font-size: 16px;">Total:</span>
+                                <span style="color: #00d4ff; font-weight: 700; font-size: 18px;" id="cartTotal">৳150</span>
+                            </div>
+                        </div>
+                        <button class="primary-button" onclick="placeOrder()" style="width: 100%;">
+                            <span class="primary-button-text">Place Order</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Product Detail Modal -->
+            <div class="modal" id="productModal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3 id="modalProductName">Product Details</h3>
+                        <button class="close-button" onclick="closeProductModal()">×</button>
+                    </div>
+                    <div class="modal-body" id="modalProductDetails"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="navigationPlaceholder"></div>
+
+    <script src="navigation.js"></script>
+    <script src="ai-data.js"></script>
+    <script>
+        let cart = [];
+        let currentCategory = 'all';
+
+        const products = [
+            {
+                id: 1,
+                name: 'Product SKU-4429',
+                category: 'electronics',
+                price: 850,
+                supplier: 'QuickSupply Co',
+                delivery: '2 days',
+                stock: 45,
+                minOrder: 10,
+                image: '📱',
+                rating: 4.8,
+                aiRecommended: true,
+                description: 'High-demand electronic component with 40% sales growth'
+            },
+            {
+                id: 2,
+                name: 'Premium Widget X',
+                category: 'hardware',
+                price: 1200,
+                supplier: 'ValueParts Inc',
+                delivery: '3 days',
+                stock: 120,
+                minOrder: 5,
+                image: '⚙️',
+                rating: 4.6,
+                aiRecommended: false,
+                description: 'Premium quality hardware widget, steady sales'
+            },
+            {
+                id: 3,
+                name: 'Dettol Soap 100g',
+                category: 'cosmetics',
+                price: 45,
+                supplier: 'HygieneHub Ltd',
+                delivery: '1 day',
+                stock: 500,
+                minOrder: 50,
+                image: '🧼',
+                rating: 4.9,
+                aiRecommended: true,
+                description: 'Fast-moving product, restock every 5 days'
+            },
+            {
+                id: 4,
+                name: 'Coca Cola 250ml',
+                category: 'food',
+                price: 35,
+                supplier: 'BeverageWorld',
+                delivery: '1 day',
+                stock: 800,
+                minOrder: 100,
+                image: '🥤',
+                rating: 4.7,
+                aiRecommended: true,
+                description: 'Peak demand on weekends, 60% higher sales'
+            },
+            {
+                id: 5,
+                name: 'Lays Chips 50g',
+                category: 'food',
+                price: 25,
+                supplier: 'SnackMart',
+                delivery: '2 days',
+                stock: 600,
+                minOrder: 100,
+                image: '🍿',
+                rating: 4.8,
+                aiRecommended: true,
+                description: 'Bundle with beverages for 25% more sales'
+            },
+            {
+                id: 6,
+                name: 'LED Bulb 15W',
+                category: 'electronics',
+                price: 180,
+                supplier: 'LightTech Co',
+                delivery: '4 days',
+                stock: 200,
+                minOrder: 20,
+                image: '💡',
+                rating: 4.5,
+                aiRecommended: false,
+                description: 'Steady demand, long shelf life'
+            },
+            {
+                id: 7,
+                name: 'Screwdriver Set',
+                category: 'hardware',
+                price: 450,
+                supplier: 'ToolMaster',
+                delivery: '3 days',
+                stock: 80,
+                minOrder: 10,
+                image: '🔧',
+                rating: 4.6,
+                aiRecommended: false,
+                description: 'Professional quality tool set'
+            },
+            {
+                id: 8,
+                name: 'Sunsilk Shampoo 200ml',
+                category: 'cosmetics',
+                price: 150,
+                supplier: 'BeautyHub',
+                delivery: '2 days',
+                stock: 300,
+                minOrder: 30,
+                image: '🧴',
+                rating: 4.7,
+                aiRecommended: true,
+                description: 'High repeat purchase rate'
+            }
+        ];
+
+        function renderProducts() {
+            const container = document.getElementById('productsContainer');
+            const filtered = products.filter(p => 
+                currentCategory === 'all' || p.category === currentCategory
+            );
+
+            container.innerHTML = filtered.map(product => `
+                <div class="product-card" style="background: #1a1f3a; border-radius: 12px; padding: 15px; margin-bottom: 15px; border: 1px solid #2a2f45;">
+                    ${product.aiRecommended ? `
+                        <div style="background: linear-gradient(135deg, #00ff88 0%, #00cc66 100%); color: #000; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 20px; display: inline-block; margin-bottom: 10px;">
+                            ⚡ AI Recommended
+                        </div>
+                    ` : ''}
+                    <div style="display: flex; gap: 15px;">
+                        <div style="font-size: 50px; flex-shrink: 0;">${product.image}</div>
+                        <div style="flex: 1;">
+                            <h4 style="color: #fff; margin: 0 0 8px 0; font-size: 15px;">${product.name}</h4>
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                <span style="color: #00d4ff; font-weight: 700; font-size: 18px;">৳${product.price}</span>
+                                <span style="color: #8b92b0; font-size: 12px;">• Min: ${product.minOrder} units</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 5px; margin-bottom: 8px;">
+                                <span style="color: #ffa500; font-size: 14px;">★</span>
+                                <span style="color: #fff; font-size: 13px; font-weight: 600;">${product.rating}</span>
+                                <span style="color: #8b92b0; font-size: 12px; margin-left: 8px;">Stock: ${product.stock}</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 5px; margin-bottom: 10px;">
+                                <svg style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="none" stroke="#00ff88" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <polyline points="12 6 12 12 16 14"/>
+                                </svg>
+                                <span style="color: #00ff88; font-size: 12px;">${product.delivery} delivery</span>
+                                <span style="color: #8b92b0; font-size: 12px; margin-left: 5px;">by ${product.supplier}</span>
+                            </div>
+                            <div style="display: flex; gap: 8px;">
+                                <button class="secondary-button" onclick="viewProduct(${product.id})" style="flex: 1; padding: 8px 12px; font-size: 13px;">
+                                    View Details
+                                </button>
+                                <button class="primary-button" onclick="addToCart(${product.id})" style="flex: 1; padding: 8px 12px; font-size: 13px;">
+                                    <span class="primary-button-text">Add to Cart</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function filterCategory(category) {
+            currentCategory = category;
+            document.querySelectorAll('.filter-chip').forEach(chip => {
+                chip.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            renderProducts();
+        }
+
+        function filterProducts() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const container = document.getElementById('productsContainer');
+            const filtered = products.filter(p => 
+                (currentCategory === 'all' || p.category === currentCategory) &&
+                (p.name.toLowerCase().includes(search) || p.supplier.toLowerCase().includes(search))
+            );
+
+            container.innerHTML = filtered.map(product => `
+                <div class="product-card" style="background: #1a1f3a; border-radius: 12px; padding: 15px; margin-bottom: 15px; border: 1px solid #2a2f45;">
+                    ${product.aiRecommended ? `
+                        <div style="background: linear-gradient(135deg, #00ff88 0%, #00cc66 100%); color: #000; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 20px; display: inline-block; margin-bottom: 10px;">
+                            ⚡ AI Recommended
+                        </div>
+                    ` : ''}
+                    <div style="display: flex; gap: 15px;">
+                        <div style="font-size: 50px; flex-shrink: 0;">${product.image}</div>
+                        <div style="flex: 1;">
+                            <h4 style="color: #fff; margin: 0 0 8px 0; font-size: 15px;">${product.name}</h4>
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                <span style="color: #00d4ff; font-weight: 700; font-size: 18px;">৳${product.price}</span>
+                                <span style="color: #8b92b0; font-size: 12px;">• Min: ${product.minOrder} units</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 5px; margin-bottom: 8px;">
+                                <span style="color: #ffa500; font-size: 14px;">★</span>
+                                <span style="color: #fff; font-size: 13px; font-weight: 600;">${product.rating}</span>
+                                <span style="color: #8b92b0; font-size: 12px; margin-left: 8px;">Stock: ${product.stock}</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 5px; margin-bottom: 10px;">
+                                <svg style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="none" stroke="#00ff88" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <polyline points="12 6 12 12 16 14"/>
+                                </svg>
+                                <span style="color: #00ff88; font-size: 12px;">${product.delivery} delivery</span>
+                                <span style="color: #8b92b0; font-size: 12px; margin-left: 5px;">by ${product.supplier}</span>
+                            </div>
+                            <div style="display: flex; gap: 8px;">
+                                <button class="secondary-button" onclick="viewProduct(${product.id})" style="flex: 1; padding: 8px 12px; font-size: 13px;">
+                                    View Details
+                                </button>
+                                <button class="primary-button" onclick="addToCart(${product.id})" style="flex: 1; padding: 8px 12px; font-size: 13px;">
+                                    <span class="primary-button-text">Add to Cart</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function viewProduct(id) {
+            const product = products.find(p => p.id === id);
+            document.getElementById('modalProductName').textContent = product.name;
+            document.getElementById('modalProductDetails').innerHTML = `
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <div style="font-size: 80px; margin-bottom: 15px;">${product.image}</div>
+                    <div style="color: #00d4ff; font-size: 24px; font-weight: 700; margin-bottom: 10px;">৳${product.price}</div>
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 5px; margin-bottom: 15px;">
+                        <span style="color: #ffa500; font-size: 18px;">★</span>
+                        <span style="color: #fff; font-size: 16px; font-weight: 600;">${product.rating}</span>
+                    </div>
+                </div>
+                <div style="background: #0a0e27; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                    <p style="color: #8b92b0; font-size: 14px; line-height: 1.6; margin: 0;">${product.description}</p>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                    <div style="background: #1a1f3a; padding: 12px; border-radius: 8px; border: 1px solid #2a2f45;">
+                        <div style="color: #8b92b0; font-size: 12px; margin-bottom: 5px;">Supplier</div>
+                        <div style="color: #fff; font-size: 14px; font-weight: 600;">${product.supplier}</div>
+                    </div>
+                    <div style="background: #1a1f3a; padding: 12px; border-radius: 8px; border: 1px solid #2a2f45;">
+                        <div style="color: #8b92b0; font-size: 12px; margin-bottom: 5px;">Delivery</div>
+                        <div style="color: #00ff88; font-size: 14px; font-weight: 600;">${product.delivery}</div>
+                    </div>
+                    <div style="background: #1a1f3a; padding: 12px; border-radius: 8px; border: 1px solid #2a2f45;">
+                        <div style="color: #8b92b0; font-size: 12px; margin-bottom: 5px;">Stock Available</div>
+                        <div style="color: #fff; font-size: 14px; font-weight: 600;">${product.stock} units</div>
+                    </div>
+                    <div style="background: #1a1f3a; padding: 12px; border-radius: 8px; border: 1px solid #2a2f45;">
+                        <div style="color: #8b92b0; font-size: 12px; margin-bottom: 5px;">Min Order</div>
+                        <div style="color: #ffa500; font-size: 14px; font-weight: 600;">${product.minOrder} units</div>
+                    </div>
+                </div>
+                <button class="primary-button" onclick="addToCart(${product.id}); closeProductModal();" style="width: 100%;">
+                    <span class="primary-button-text">Add to Cart</span>
+                </button>
+            `;
+            document.getElementById('productModal').style.display = 'flex';
+        }
+
+        function closeProductModal() {
+            document.getElementById('productModal').style.display = 'none';
+        }
+
+        function addToCart(id) {
+            const product = products.find(p => p.id === id);
+            const existing = cart.find(item => item.id === id);
+            
+            if (existing) {
+                existing.quantity += product.minOrder;
+            } else {
+                cart.push({
+                    ...product,
+                    quantity: product.minOrder
+                });
+            }
+            
+            updateCartBadge();
+            alert(`${product.name} added to cart!`);
+        }
+
+        function updateCartBadge() {
+            document.getElementById('cartBadge').textContent = cart.length;
+        }
+
+        function openCart() {
+            if (cart.length === 0) {
+                document.getElementById('cartItems').innerHTML = `
+                    <div style="text-align: center; padding: 40px 20px;">
+                        <div style="font-size: 60px; margin-bottom: 15px;">🛒</div>
+                        <p style="color: #8b92b0; font-size: 14px;">Your cart is empty</p>
+                    </div>
+                `;
+            } else {
+                const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                const delivery = 150;
+                const total = subtotal + delivery;
+
+                document.getElementById('cartItems').innerHTML = cart.map((item, index) => `
+                    <div style="background: #0a0e27; padding: 12px; border-radius: 10px; margin-bottom: 12px;">
+                        <div style="display: flex; gap: 12px; align-items: center;">
+                            <div style="font-size: 35px;">${item.image}</div>
+                            <div style="flex: 1;">
+                                <div style="color: #fff; font-weight: 600; margin-bottom: 5px; font-size: 14px;">${item.name}</div>
+                                <div style="color: #00d4ff; font-weight: 600; margin-bottom: 5px;">৳${item.price} × ${item.quantity}</div>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <button onclick="updateQuantity(${index}, -${item.minOrder})" style="background: #1a1f3a; border: 1px solid #2a2f45; color: #fff; padding: 4px 10px; border-radius: 5px; cursor: pointer;">−</button>
+                                    <span style="color: #fff; font-size: 13px; min-width: 30px; text-align: center;">${item.quantity}</span>
+                                    <button onclick="updateQuantity(${index}, ${item.minOrder})" style="background: #1a1f3a; border: 1px solid #2a2f45; color: #fff; padding: 4px 10px; border-radius: 5px; cursor: pointer;">+</button>
+                                </div>
+                            </div>
+                            <button onclick="removeFromCart(${index})" style="background: transparent; border: none; color: #ff4444; font-size: 20px; cursor: pointer; padding: 5px;">×</button>
+                        </div>
+                    </div>
+                `).join('');
+
+                document.getElementById('cartSubtotal').textContent = `৳${subtotal}`;
+                document.getElementById('cartDelivery').textContent = `৳${delivery}`;
+                document.getElementById('cartTotal').textContent = `৳${total}`;
+            }
+            
+            document.getElementById('cartModal').style.display = 'flex';
+        }
+
+        function closeCart() {
+            document.getElementById('cartModal').style.display = 'none';
+        }
+
+        function updateQuantity(index, change) {
+            cart[index].quantity += change;
+            if (cart[index].quantity < cart[index].minOrder) {
+                cart[index].quantity = cart[index].minOrder;
+            }
+            openCart();
+        }
+
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            updateCartBadge();
+            openCart();
+        }
+
+        function placeOrder() {
+            if (cart.length === 0) {
+                alert('Your cart is empty!');
+                return;
+            }
+            
+            const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0) + 150;
+            alert(`Order placed successfully! Total: ৳${total}\n\nYou can track your order in the Order Tracking page.`);
+            cart = [];
+            updateCartBadge();
+            closeCart();
+            window.location.href = 'retailer-order-tracking.html';
+        }
+
+        // Initialize
+        renderProducts();
+    </script>
+
+    <style>
+        .filter-chip {
+            background: #1a1f3a;
+            border: 1px solid #2a2f45;
+            color: #8b92b0;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .filter-chip.active {
+            background: linear-gradient(135deg, #00d4ff 0%, #0066cc 100%);
+            border-color: #00d4ff;
+            color: #fff;
+            font-weight: 600;
+        }
+    </style>
+
+    <script src="navigation.js"></script>
+    <script>
+        // Inject navigation
+        document.getElementById('navigationContainer').innerHTML = generateMobileNav('retailer');
+    </script>
+</body>
+</html>

@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Insights - ChainSync AI</title>
+    <link rel="stylesheet" href="ai-insights-custom.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Top Navbar -->
+        <nav class="top-navbar">
+            <button class="hamburger-btn" onclick="toggleSidebar()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+            <div class="navbar-brand">
+                <h2>AI Insights</h2>
+            </div>
+            <div class="navbar-actions">
+                <button class="nav-action-btn notification-btn" onclick="showNotifications()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <span class="notification-badge">3</span>
+                </button>
+                <button class="nav-action-btn avatar-btn" onclick="openProfile()">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='16' fill='%236366f1'/%3E%3Ctext x='16' y='21' text-anchor='middle' fill='white' font-size='14' font-weight='bold'%3EA%3C/text%3E%3C/svg%3E" alt="Profile">
+                </button>
+            </div>
+        </nav>
+
+        <!-- Sidebar Menu -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-profile">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Ccircle cx='30' cy='30' r='30' fill='%236366f1'/%3E%3Ctext x='30' y='38' text-anchor='middle' fill='white' font-size='24' font-weight='bold'%3EA%3C/text%3E%3C/svg%3E" alt="Profile">
+                    <div class="sidebar-user-info">
+                        <h3>Arif Rahman</h3>
+                        <p>arif@retailshop.com</p>
+                    </div>
+                </div>
+                <button class="sidebar-close" onclick="toggleSidebar()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="retailer-dashboard.html" class="sidebar-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
+                <a href="inventory.html" class="sidebar-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                        <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                        <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                    </svg>
+                    <span>Inventory Management</span>
+                </a>
+                <a href="orders.html" class="sidebar-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 11l3 3L22 4"></path>
+                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                    </svg>
+                    <span>Orders</span>
+                </a>
+                <a href="ai-insights.html" class="sidebar-nav-item active">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                        <path d="M2 17l10 5 10-5"></path>
+                        <path d="M2 12l10 5 10-5"></path>
+                    </svg>
+                    <span>AI Insights</span>
+                </a>
+                <a href="finance.html" class="sidebar-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="1" x2="12" y2="23"></line>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                    <span>Finance & Loans</span>
+                </a>
+                <a href="customers.html" class="sidebar-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    <span>Customers</span>
+                </a>
+                <a href="chat-ai.html" class="sidebar-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span>Chat AI Assistant</span>
+                </a>
+                <a href="reports.html" class="sidebar-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="20" x2="18" y2="10"></line>
+                        <line x1="12" y1="20" x2="12" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                    <span>Reports & Analytics</span>
+                </a>
+                <a href="profile.html" class="sidebar-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M12 1v6m0 6v6m6-12v6m-6 6v6M6 7v6m6-6v6"></path>
+                    </svg>
+                    <span>Settings & Profile</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Hero Section - AI Summary -->
+            <div class="ai-hero-section">
+                <div class="ai-hero-content">
+                    <div class="ai-hero-badge">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                            <path d="M2 17l10 5 10-5"></path>
+                            <path d="M2 12l10 5 10-5"></path>
+                        </svg>
+                        AI-Generated Summary
+                    </div>
+                    <h1 class="ai-hero-title">
+                        Your beverage sales are trending <span class="highlight-stat">+22%</span> this month
+                    </h1>
+                    <div class="ai-hero-meta">
+                        <span class="meta-item">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                            Updated 5 mins ago
+                        </span>
+                        <span class="meta-item">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                            </svg>
+                            95% confidence
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analytics Overview Section -->
+            <div class="insights-section-header">
+                <h2 class="insights-section-title">Analytics Overview</h2>
+            </div>
+
+            <div class="insights-grid">
+                <!-- Demand Forecast Card -->
+                <div class="insight-card">
+                    <div class="insight-card-header">
+                        <div class="insight-title-group">
+                            <h3 class="insight-card-title">Demand Forecast</h3>
+                            <p class="insight-card-subtitle">Next 7 days prediction</p>
+                        </div>
+                        <div class="insight-badge ai-powered">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                                <path d="M2 17l10 5 10-5"></path>
+                                <path d="M2 12l10 5 10-5"></path>
+                            </svg>
+                            AI Powered
+                        </div>
+                    </div>
+                    <div class="insight-chart-container">
+                        <svg class="line-chart" viewBox="0 0 340 160" preserveAspectRatio="xMidYMid meet">
+                            <!-- Grid lines -->
+                            <line x1="0" y1="130" x2="340" y2="130" stroke="#f1f5f9" stroke-width="1"/>
+                            <line x1="0" y1="100" x2="340" y2="100" stroke="#f1f5f9" stroke-width="1"/>
+                            <line x1="0" y1="70" x2="340" y2="70" stroke="#f1f5f9" stroke-width="1"/>
+                            <line x1="0" y1="40" x2="340" y2="40" stroke="#f1f5f9" stroke-width="1"/>
+                            
+                            <!-- Actual data line -->
+                            <polyline
+                                fill="none"
+                                stroke="url(#lineGradient)"
+                                stroke-width="3"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                points="10,110 60,95 110,80 160,90 210,65 260,75 310,55"
+                            />
+                            
+                            <!-- Forecast line -->
+                            <polyline
+                                fill="none"
+                                stroke="#a855f7"
+                                stroke-width="2"
+                                stroke-dasharray="5,5"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                points="210,65 260,50 310,40"
+                            />
+                            
+                            <!-- Gradient definition -->
+                            <defs>
+                                <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
+                                    <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
+                                </linearGradient>
+                            </defs>
+                            
+                            <!-- Data points -->
+                            <circle cx="10" cy="110" r="4" fill="#6366f1"/>
+                            <circle cx="60" cy="95" r="4" fill="#6366f1"/>
+                            <circle cx="110" cy="80" r="4" fill="#7c3aed"/>
+                            <circle cx="160" cy="90" r="4" fill="#7c3aed"/>
+                            <circle cx="210" cy="65" r="4" fill="#8b5cf6"/>
+                            <circle cx="260" cy="75" r="5" fill="#a855f7"/>
+                            <circle cx="310" cy="55" r="5" fill="#a855f7"/>
+                        </svg>
+                    </div>
+                    <div class="chart-legend">
+                        <div class="legend-item">
+                            <span class="legend-dot actual"></span>
+                            <span>Actual Sales</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-dot forecast"></span>
+                            <span>AI Forecast</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Product Performance Card -->
+                <div class="insight-card">
+                    <div class="insight-card-header">
+                        <div class="insight-title-group">
+                            <h3 class="insight-card-title">Product Performance</h3>
+                            <p class="insight-card-subtitle">Top selling categories</p>
+                        </div>
+                        <select class="chart-filter">
+                            <option>This Week</option>
+                            <option>This Month</option>
+                            <option>This Year</option>
+                        </select>
+                    </div>
+                    <div class="performance-list">
+                        <div class="performance-item">
+                            <div class="performance-icon">🥤</div>
+                            <div class="performance-details">
+                                <div class="performance-name">Beverages</div>
+                                <div class="performance-value">৳45,280</div>
+                                <div class="performance-bar-track">
+                                    <div class="performance-bar-fill" style="width: 85%; background: linear-gradient(90deg, #6366f1, #8b5cf6);"></div>
+                                </div>
+                            </div>
+                            <div class="performance-percent">85%</div>
+                        </div>
+                        
+                        <div class="performance-item">
+                            <div class="performance-icon">🍪</div>
+                            <div class="performance-details">
+                                <div class="performance-name">Snacks</div>
+                                <div class="performance-value">৳38,920</div>
+                                <div class="performance-bar-track">
+                                    <div class="performance-bar-fill" style="width: 72%; background: linear-gradient(90deg, #22c55e, #16a34a);"></div>
+                                </div>
+                            </div>
+                            <div class="performance-percent">72%</div>
+                        </div>
+                        
+                        <div class="performance-item">
+                            <div class="performance-icon">🍚</div>
+                            <div class="performance-details">
+                                <div class="performance-name">Rice & Grains</div>
+                                <div class="performance-value">৳32,150</div>
+                                <div class="performance-bar-track">
+                                    <div class="performance-bar-fill" style="width: 60%; background: linear-gradient(90deg, #fb923c, #f97316);"></div>
+                                </div>
+                            </div>
+                            <div class="performance-percent">60%</div>
+                        </div>
+                        
+                        <div class="performance-item">
+                            <div class="performance-icon">🧴</div>
+                            <div class="performance-details">
+                                <div class="performance-name">Personal Care</div>
+                                <div class="performance-value">৳28,640</div>
+                                <div class="performance-bar-track">
+                                    <div class="performance-bar-fill" style="width: 54%; background: linear-gradient(90deg, #a855f7, #9333ea);"></div>
+                                </div>
+                            </div>
+                            <div class="performance-percent">54%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Seasonality Pattern Card -->
+                <div class="insight-card">
+                    <div class="insight-card-header">
+                        <div class="insight-title-group">
+                            <h3 class="insight-card-title">Seasonality Pattern</h3>
+                            <p class="insight-card-subtitle">Peak sales hours by day</p>
+                        </div>
+                        <div class="insight-badge ai-powered">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+                            </svg>
+                            Heatmap
+                        </div>
+                    </div>
+                    <div class="heatmap-wrapper">
+                        <div class="heatmap-grid">
+                            <div class="heatmap-row">
+                                <span class="day-label">Mon</span>
+                                <div class="heatmap-cell low"></div>
+                                <div class="heatmap-cell low"></div>
+                                <div class="heatmap-cell medium"></div>
+                                <div class="heatmap-cell medium"></div>
+                                <div class="heatmap-cell high"></div>
+                                <div class="heatmap-cell medium"></div>
+                            </div>
+                            <div class="heatmap-row">
+                                <span class="day-label">Tue</span>
+                                <div class="heatmap-cell low"></div>
+                                <div class="heatmap-cell medium"></div>
+                                <div class="heatmap-cell medium"></div>
+                                <div class="heatmap-cell high"></div>
+                                <div class="heatmap-cell high"></div>
+                                <div class="heatmap-cell medium"></div>
+                            </div>
+                            <div class="heatmap-row">
+                                <span class="day-label">Wed</span>
+                                <div class="heatmap-cell low"></div>
+                                <div class="heatmap-cell low"></div>
+                                <div class="heatmap-cell medium"></div>
+                                <div class="heatmap-cell high"></div>
+                                <div class="heatmap-cell very-high"></div>
+                                <div class="heatmap-cell high"></div>
+                            </div>
+                            <div class="heatmap-row">
+                                <span class="day-label">Thu</span>
+                                <div class="heatmap-cell low"></div>
+                                <div class="heatmap-cell medium"></div>
+                                <div class="heatmap-cell high"></div>
+                                <div class="heatmap-cell high"></div>
+                                <div class="heatmap-cell very-high"></div>
+                                <div class="heatmap-cell medium"></div>
+                            </div>
+                            <div class="heatmap-row">
+                                <span class="day-label">Fri</span>
+                                <div class="heatmap-cell medium"></div>
+                                <div class="heatmap-cell medium"></div>
+                                <div class="heatmap-cell high"></div>
+                                <div class="heatmap-cell very-high"></div>
+                                <div class="heatmap-cell very-high"></div>
+                                <div class="heatmap-cell high"></div>
+                            </div>
+                            <div class="heatmap-row">
+                                <span class="day-label">Sat</span>
+                                <div class="heatmap-cell medium"></div>
+                                <div class="heatmap-cell high"></div>
+                                <div class="heatmap-cell very-high"></div>
+                                <div class="heatmap-cell very-high"></div>
+                                <div class="heatmap-cell high"></div>
+                                <div class="heatmap-cell medium"></div>
+                            </div>
+                            <div class="heatmap-row">
+                                <span class="day-label">Sun</span>
+                                <div class="heatmap-cell low"></div>
+                                <div class="heatmap-cell medium"></div>
+                                <div class="heatmap-cell medium"></div>
+                                <div class="heatmap-cell high"></div>
+                                <div class="heatmap-cell high"></div>
+                                <div class="heatmap-cell medium"></div>
+                            </div>
+                        </div>
+                        <div class="time-labels">
+                            <span>Morning</span>
+                            <span>Noon</span>
+                            <span>Afternoon</span>
+                            <span>Evening</span>
+                            <span>Night</span>
+                            <span>Late</span>
+                        </div>
+                    </div>
+                    <div class="heatmap-legend">
+                        <span class="legend-label">Sales Volume:</span>
+                        <div class="legend-scale">
+                            <div class="scale-item">
+                                <div class="scale-box low"></div>
+                                <span>Low</span>
+                            </div>
+                            <div class="scale-item">
+                                <div class="scale-box medium"></div>
+                                <span>Medium</span>
+                            </div>
+                            <div class="scale-item">
+                                <div class="scale-box high"></div>
+                                <span>High</span>
+                            </div>
+                            <div class="scale-item">
+                                <div class="scale-box very-high"></div>
+                                <span>Peak</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Recommendations Section -->
+            <div class="insights-section-header">
+                <h2 class="insights-section-title">AI Recommendations</h2>
+                <a href="#" class="section-action-link">
+                    View History
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </a>
+            </div>
+
+            <div class="recommendations-list">
+                <!-- Trending Products -->
+                <div class="recommendation-card">
+                    <div class="recommendation-header">
+                        <div class="rec-badge trending">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                                <polyline points="17 6 23 6 23 12"></polyline>
+                            </svg>
+                            Trending Up
+                        </div>
+                        <span class="rec-time">2 hours ago</span>
+                    </div>
+                    <h4 class="rec-title">Top 3 New Items Gaining Traction Nearby</h4>
+                    <div class="trending-items">
+                        <div class="trending-item">
+                            <div class="trending-rank">1</div>
+                            <span class="trending-emoji">🥤</span>
+                            <div class="trending-info">
+                                <span class="trending-name">Brand A Energy Drink</span>
+                                <div class="trending-stats">
+                                    <span class="stat-badge success">+45% demand</span>
+                                    <span class="stat-text">in 5km radius</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="trending-item">
+                            <div class="trending-rank">2</div>
+                            <span class="trending-emoji">🍫</span>
+                            <div class="trending-info">
+                                <span class="trending-name">Brand B Chocolate Bar</span>
+                                <div class="trending-stats">
+                                    <span class="stat-badge success">+38% demand</span>
+                                    <span class="stat-text">in 5km radius</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="trending-item">
+                            <div class="trending-rank">3</div>
+                            <span class="trending-emoji">🧃</span>
+                            <div class="trending-info">
+                                <span class="trending-name">Brand C Juice Pack</span>
+                                <div class="trending-stats">
+                                    <span class="stat-badge success">+32% demand</span>
+                                    <span class="stat-text">in 5km radius</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="rec-action-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        Add to Inventory
+                    </button>
+                </div>
+
+                <!-- Stock Alert -->
+                <div class="recommendation-card">
+                    <div class="recommendation-header">
+                        <div class="rec-badge warning">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                                <line x1="12" y1="9" x2="12" y2="13"></line>
+                                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                            </svg>
+                            Action Required
+                        </div>
+                        <span class="rec-time">1 hour ago</span>
+                    </div>
+                    <h4 class="rec-title">Predicted Stock Shortage</h4>
+                    <p class="rec-description">Based on current sales velocity, these items may run out within 3 days:</p>
+                    <div class="alert-items">
+                        <div class="alert-item">
+                            <span class="alert-emoji">🥤</span>
+                            <div class="alert-info">
+                                <span class="alert-name">Coca Cola 500ml</span>
+                                <span class="alert-stock">12 units left</span>
+                            </div>
+                            <span class="alert-days">2 days</span>
+                        </div>
+                        <div class="alert-item">
+                            <span class="alert-emoji">🍪</span>
+                            <div class="alert-info">
+                                <span class="alert-name">Pran Biscuits</span>
+                                <span class="alert-stock">8 units left</span>
+                            </div>
+                            <span class="alert-days">2.5 days</span>
+                        </div>
+                    </div>
+                    <button class="rec-action-btn secondary">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                            <line x1="3" y1="6" x2="21" y2="6"></line>
+                            <path d="M16 10a4 4 0 0 1-8 0"></path>
+                        </svg>
+                        Create Restock Order
+                    </button>
+                </div>
+
+                <!-- Opportunity -->
+                <div class="recommendation-card">
+                    <div class="recommendation-header">
+                        <div class="rec-badge opportunity">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <path d="M12 16v-4"></path>
+                                <path d="M12 8h.01"></path>
+                            </svg>
+                            Opportunity
+                        </div>
+                        <span class="rec-time">3 hours ago</span>
+                    </div>
+                    <h4 class="rec-title">Seasonal Demand Spike Expected</h4>
+                    <p class="rec-description">Festival season approaching. Consider stocking these categories:</p>
+                    <div class="opportunity-tags">
+                        <span class="opp-tag">🧃 Beverages +55%</span>
+                        <span class="opp-tag">🍪 Snacks +40%</span>
+                        <span class="opp-tag">🎂 Bakery +35%</span>
+                    </div>
+                    <button class="rec-action-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 11 12 14 22 4"></polyline>
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                        </svg>
+                        View Suggested Orders
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav">
+            <button class="nav-item" onclick="window.location.href='retailer-dashboard.html'">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                </svg>
+                <span class="nav-label">Home</span>
+            </button>
+            <button class="nav-item" onclick="window.location.href='orders.html'">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 11l3 3L22 4"></path>
+                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                </svg>
+                <span class="nav-label">Orders</span>
+            </button>
+            <button class="nav-item" onclick="window.location.href='inventory.html'">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                    <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                </svg>
+                <span class="nav-label">Inventory</span>
+            </button>
+            <button class="nav-item" onclick="window.location.href='ai.html'">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                    <path d="M2 17l10 5 10-5"></path>
+                    <path d="M2 12l10 5 10-5"></path>
+                </svg>
+                <span class="nav-label">AI</span>
+            </button>
+            <button class="nav-item" onclick="window.location.href='profile.html'">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                <span class="nav-label">Profile</span>
+            </button>
+        </nav>
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('show');
+            overlay.classList.toggle('show');
+        }
+
+        function showNotifications() {
+            alert('Notifications: 3 new updates available');
+        }
+
+        function openProfile() {
+            window.location.href = 'profile.html';
+        }
+    </script>
+</body>
+</html>

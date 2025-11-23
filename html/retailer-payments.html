@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payments & Invoices - ChainSync AI</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Navigation will be injected here -->
+    <div id="navigationContainer"></div>
+
+    <div class="container with-nav">
+        <div class="scroll-content with-bottom-nav">
+            <!-- Header -->
+            <div style="position: relative; padding: 20px 20px 0 20px; margin-bottom: 20px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;">
+                    <button class="back-button" onclick="window.location.href='retailer-dashboard.html'" style="background: #1a1f3a; border: 1px solid #2a2f45; border-radius: 10px; padding: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                        <svg style="width: 20px; height: 20px; stroke: #00d4ff;" viewBox="0 0 24 24" fill="none" stroke-width="2">
+                            <line x1="19" y1="12" x2="5" y2="12"/>
+                            <polyline points="12 19 5 12 12 5"/>
+                        </svg>
+                    </button>
+                    <h2 style="color: #fff; font-size: 18px; font-weight: 700; margin: 0; flex: 1; text-align: center;">💰 Payments & Invoices</h2>
+                    <div style="width: 40px;"></div>
+                </div>
+            </div>
+
+            <!-- Payment Summary Cards -->
+            <div style="margin: 0 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 25px;">
+                <div style="background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%); padding: 15px; border-radius: 12px;">
+                    <div style="color: rgba(255, 255, 255, 0.8); font-size: 12px; margin-bottom: 5px;">Outstanding</div>
+                    <div style="color: #fff; font-size: 22px; font-weight: 700;">৳18,750</div>
+                    <div style="color: rgba(255, 255, 255, 0.7); font-size: 11px; margin-top: 5px;">3 pending invoices</div>
+                </div>
+                <div style="background: linear-gradient(135deg, #00ff88 0%, #00cc66 100%); padding: 15px; border-radius: 12px;">
+                    <div style="color: rgba(0, 0, 0, 0.7); font-size: 12px; margin-bottom: 5px;">Paid This Month</div>
+                    <div style="color: #000; font-size: 22px; font-weight: 700;">৳82,950</div>
+                    <div style="color: rgba(0, 0, 0, 0.6); font-size: 11px; margin-top: 5px;">8 paid invoices</div>
+                </div>
+            </div>
+
+            <!-- AI Payment Insights -->
+            <div style="margin: 0 20px 20px 20px;">
+                <div class="ai-banner" style="background: linear-gradient(135deg, #4169e1 0%, #0033aa 100%); padding: 15px; border-radius: 12px; color: white;">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                        <svg style="width: 24px; height: 24px;" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M12 6v6l4 2"/>
+                        </svg>
+                        <strong style="font-size: 15px;">💡 AI Payment Reminder</strong>
+                    </div>
+                    <p style="font-size: 13px; opacity: 0.95; margin: 0;">Invoice INV-RTL-2847 due in 2 days (৳10,750). Pay early for 2% discount!</p>
+                </div>
+            </div>
+
+            <!-- Filter Tabs -->
+            <div style="margin: 0 20px 20px 20px; display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px;">
+                <button class="filter-chip active" onclick="filterInvoices('all')">All</button>
+                <button class="filter-chip" onclick="filterInvoices('pending')">Pending</button>
+                <button class="filter-chip" onclick="filterInvoices('paid')">Paid</button>
+                <button class="filter-chip" onclick="filterInvoices('overdue')">Overdue</button>
+            </div>
+
+            <!-- Invoices List -->
+            <div id="invoicesContainer" style="padding: 0 20px;"></div>
+
+            <!-- Invoice Detail Modal -->
+            <div class="modal" id="invoiceModal">
+                <div class="modal-content" style="max-height: 85vh; overflow-y: auto;">
+                    <div class="modal-header">
+                        <h3 id="modalInvoiceId">Invoice Details</h3>
+                        <button class="close-button" onclick="closeInvoiceModal()">×</button>
+                    </div>
+                    <div class="modal-body" id="modalInvoiceDetails"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="navigationPlaceholder"></div>
+
+    <script src="navigation.js"></script>
+    <script src="ai-data.js"></script>
+    <script>
+        let currentFilter = 'all';
+
+        const invoices = [
+            {
+                id: 'INV-RTL-2847',
+                orderId: 'RTL-2847',
+                supplier: 'QuickSupply Co',
+                amount: 10750,
+                status: 'pending',
+                dueDate: '2025-11-03',
+                issueDate: '2025-10-30',
+                items: [
+                    { name: 'Product SKU-4429', qty: 50, price: 850, total: 42500 },
+                    { name: 'Dettol Soap 100g', qty: 100, price: 45, total: 4500 }
+                ],
+                subtotal: 47000,
+                discount: 5,
+                discountAmount: 2350,
+                tax: 0,
+                total: 44650,
+                paymentTerms: '7 days',
+                aiInsight: 'Pay within 2 days for early payment discount of 2%'
+            },
+            {
+                id: 'INV-RTL-2846',
+                orderId: 'RTL-2846',
+                supplier: 'BeverageWorld',
+                amount: 5000,
+                status: 'pending',
+                dueDate: '2025-11-05',
+                issueDate: '2025-10-29',
+                items: [
+                    { name: 'Coca Cola 250ml', qty: 200, price: 35, total: 7000 },
+                    { name: 'Lays Chips 50g', qty: 150, price: 25, total: 3750 }
+                ],
+                subtotal: 10750,
+                discount: 0,
+                discountAmount: 0,
+                tax: 0,
+                total: 10750,
+                paymentTerms: '10 days',
+                aiInsight: 'Standard payment terms, no rush'
+            },
+            {
+                id: 'INV-RTL-2843',
+                orderId: 'RTL-2843',
+                supplier: 'ToolMaster',
+                amount: 3000,
+                status: 'overdue',
+                dueDate: '2025-10-28',
+                issueDate: '2025-10-18',
+                items: [
+                    { name: 'Screwdriver Set', qty: 20, price: 450, total: 9000 }
+                ],
+                subtotal: 9000,
+                discount: 10,
+                discountAmount: 900,
+                tax: 0,
+                total: 8100,
+                paymentTerms: '10 days',
+                aiInsight: '⚠️ Payment overdue! Contact supplier to avoid late fees'
+            },
+            {
+                id: 'INV-RTL-2845',
+                orderId: 'RTL-2845',
+                supplier: 'LightTech Co',
+                amount: 16200,
+                status: 'paid',
+                dueDate: '2025-10-29',
+                issueDate: '2025-10-25',
+                paidDate: '2025-10-27',
+                items: [
+                    { name: 'LED Bulb 15W', qty: 40, price: 180, total: 7200 },
+                    { name: 'Screwdriver Set', qty: 20, price: 450, total: 9000 }
+                ],
+                subtotal: 16200,
+                discount: 0,
+                discountAmount: 0,
+                tax: 0,
+                total: 16200,
+                paymentTerms: '5 days',
+                paymentMethod: 'Bank Transfer',
+                aiInsight: 'Paid 2 days early - excellent payment history!'
+            },
+            {
+                id: 'INV-RTL-2844',
+                orderId: 'RTL-2844',
+                supplier: 'BeautyHub',
+                amount: 9000,
+                status: 'paid',
+                dueDate: '2025-10-24',
+                issueDate: '2025-10-22',
+                paidDate: '2025-10-24',
+                items: [
+                    { name: 'Sunsilk Shampoo 200ml', qty: 60, price: 150, total: 9000 }
+                ],
+                subtotal: 9000,
+                discount: 0,
+                discountAmount: 0,
+                tax: 0,
+                total: 9000,
+                paymentTerms: '3 days',
+                paymentMethod: 'Mobile Banking',
+                aiInsight: 'Paid on time'
+            },
+            {
+                id: 'INV-RTL-2842',
+                orderId: 'RTL-2842',
+                supplier: 'HygieneHub Ltd',
+                amount: 22500,
+                status: 'paid',
+                dueDate: '2025-10-20',
+                issueDate: '2025-10-15',
+                paidDate: '2025-10-19',
+                items: [
+                    { name: 'Dettol Soap 100g', qty: 500, price: 45, total: 22500 }
+                ],
+                subtotal: 22500,
+                discount: 0,
+                discountAmount: 0,
+                tax: 0,
+                total: 22500,
+                paymentTerms: '5 days',
+                paymentMethod: 'Bank Transfer',
+                aiInsight: 'Paid 1 day early'
+            }
+        ];
+
+        function getStatusColor(status) {
+            const colors = {
+                'pending': '#ffa500',
+                'paid': '#00ff88',
+                'overdue': '#ff4444'
+            };
+            return colors[status] || '#8b92b0';
+        }
+
+        function getStatusText(status) {
+            const texts = {
+                'pending': 'Pending',
+                'paid': 'Paid',
+                'overdue': 'Overdue'
+            };
+            return texts[status] || status;
+        }
+
+        function getDaysUntilDue(dueDate) {
+            const today = new Date('2025-11-01');
+            const due = new Date(dueDate);
+            const diffTime = due - today;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            return diffDays;
+        }
+
+        function renderInvoices() {
+            const container = document.getElementById('invoicesContainer');
+            const filtered = invoices.filter(inv => 
+                currentFilter === 'all' || inv.status === currentFilter
+            );
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px 20px; background: #1a1f3a; border-radius: 12px;">
+                        <div style="font-size: 50px; margin-bottom: 10px;">📄</div>
+                        <p style="color: #8b92b0; font-size: 14px;">No ${currentFilter === 'all' ? '' : currentFilter} invoices</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filtered.map(invoice => {
+                const daysUntil = getDaysUntilDue(invoice.dueDate);
+                const isUrgent = invoice.status === 'pending' && daysUntil <= 3 && daysUntil >= 0;
+                
+                return `
+                    <div class="invoice-card" style="background: #1a1f3a; border-radius: 12px; padding: 15px; margin-bottom: 12px; border: 1px solid ${isUrgent ? '#ffa500' : '#2a2f45'}; cursor: pointer;" onclick="viewInvoice('${invoice.id}')">
+                        ${isUrgent ? `
+                            <div style="background: linear-gradient(135deg, #ffa500 0%, #ff8800 100%); color: #000; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 20px; display: inline-block; margin-bottom: 10px;">
+                                ⚠️ Due Soon (${daysUntil} days)
+                            </div>
+                        ` : ''}
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                            <div>
+                                <div style="color: #00d4ff; font-weight: 700; font-size: 15px; margin-bottom: 5px;">${invoice.id}</div>
+                                <div style="color: #8b92b0; font-size: 12px;">${invoice.supplier}</div>
+                            </div>
+                            <div style="background: ${getStatusColor(invoice.status)}; color: ${invoice.status === 'paid' ? '#000' : '#fff'}; padding: 5px 12px; border-radius: 15px; font-size: 11px; font-weight: 600;">
+                                ${getStatusText(invoice.status)}
+                            </div>
+                        </div>
+
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <div>
+                                <div style="color: #8b92b0; font-size: 11px; margin-bottom: 3px;">Amount</div>
+                                <div style="color: #fff; font-size: 20px; font-weight: 700;">৳${invoice.total.toLocaleString()}</div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="color: #8b92b0; font-size: 11px; margin-bottom: 3px;">
+                                    ${invoice.status === 'paid' ? 'Paid On' : 'Due Date'}
+                                </div>
+                                <div style="color: ${invoice.status === 'paid' ? '#00ff88' : invoice.status === 'overdue' ? '#ff4444' : '#fff'}; font-size: 13px; font-weight: 600;">
+                                    ${invoice.status === 'paid' ? invoice.paidDate : invoice.dueDate}
+                                </div>
+                            </div>
+                        </div>
+
+                        ${invoice.aiInsight ? `
+                            <div style="background: rgba(0, 212, 255, 0.1); border-left: 3px solid #00d4ff; padding: 10px; border-radius: 6px; margin-bottom: 10px;">
+                                <div style="color: #00d4ff; font-size: 11px; font-weight: 600; margin-bottom: 3px;">💡 AI Insight</div>
+                                <div style="color: #fff; font-size: 11px;">${invoice.aiInsight}</div>
+                            </div>
+                        ` : ''}
+
+                        <div style="color: #00d4ff; font-size: 12px; font-weight: 600; text-align: center;">
+                            Tap to view details →
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filterInvoices(filter) {
+            currentFilter = filter;
+            document.querySelectorAll('.filter-chip').forEach(chip => {
+                chip.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            renderInvoices();
+        }
+
+        function viewInvoice(id) {
+            const invoice = invoices.find(inv => inv.id === id);
+            document.getElementById('modalInvoiceId').textContent = invoice.id;
+
+            document.getElementById('modalInvoiceDetails').innerHTML = `
+                <!-- Header Info -->
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <div style="display: inline-block; background: ${getStatusColor(invoice.status)}; color: ${invoice.status === 'paid' ? '#000' : '#fff'}; padding: 8px 20px; border-radius: 25px; font-size: 13px; font-weight: 600; margin-bottom: 10px;">
+                        ${getStatusText(invoice.status)}
+                    </div>
+                    <div style="color: #8b92b0; font-size: 12px;">Order #${invoice.orderId}</div>
+                </div>
+
+                <!-- Supplier & Dates -->
+                <div style="background: #0a0e27; padding: 15px; border-radius: 12px; margin-bottom: 15px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div>
+                            <div style="color: #8b92b0; font-size: 11px; margin-bottom: 5px;">Supplier</div>
+                            <div style="color: #fff; font-size: 14px; font-weight: 600;">${invoice.supplier}</div>
+                        </div>
+                        <div>
+                            <div style="color: #8b92b0; font-size: 11px; margin-bottom: 5px;">Payment Terms</div>
+                            <div style="color: #fff; font-size: 14px; font-weight: 600;">${invoice.paymentTerms}</div>
+                        </div>
+                        <div>
+                            <div style="color: #8b92b0; font-size: 11px; margin-bottom: 5px;">Issue Date</div>
+                            <div style="color: #fff; font-size: 14px; font-weight: 600;">${invoice.issueDate}</div>
+                        </div>
+                        <div>
+                            <div style="color: #8b92b0; font-size: 11px; margin-bottom: 5px;">${invoice.status === 'paid' ? 'Paid Date' : 'Due Date'}</div>
+                            <div style="color: ${invoice.status === 'paid' ? '#00ff88' : invoice.status === 'overdue' ? '#ff4444' : '#ffa500'}; font-size: 14px; font-weight: 600;">
+                                ${invoice.status === 'paid' ? invoice.paidDate : invoice.dueDate}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Insight -->
+                ${invoice.aiInsight ? `
+                    <div style="background: linear-gradient(135deg, rgba(0, 212, 255, 0.2) 0%, rgba(0, 153, 204, 0.1) 100%); border: 1px solid #00d4ff; padding: 15px; border-radius: 12px; margin-bottom: 15px;">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                            <svg style="width: 20px; height: 20px;" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <path d="M12 16v-4"/>
+                                <path d="M12 8h.01"/>
+                            </svg>
+                            <span style="color: #00d4ff; font-weight: 700; font-size: 14px;">AI Insight</span>
+                        </div>
+                        <p style="color: #fff; font-size: 13px; margin: 0;">${invoice.aiInsight}</p>
+                    </div>
+                ` : ''}
+
+                <!-- Items -->
+                <div style="background: #0a0e27; padding: 15px; border-radius: 12px; margin-bottom: 15px;">
+                    <h4 style="color: #fff; font-size: 14px; margin-bottom: 12px;">📦 Items</h4>
+                    ${invoice.items.map(item => `
+                        <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #1a1f3a;">
+                            <div style="flex: 1;">
+                                <div style="color: #fff; font-size: 13px; font-weight: 600; margin-bottom: 3px;">${item.name}</div>
+                                <div style="color: #8b92b0; font-size: 11px;">৳${item.price} × ${item.qty}</div>
+                            </div>
+                            <div style="color: #00d4ff; font-weight: 700; font-size: 14px;">৳${item.total.toLocaleString()}</div>
+                        </div>
+                    `).join('')}
+
+                    <!-- Calculations -->
+                    <div style="padding-top: 12px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span style="color: #8b92b0; font-size: 12px;">Subtotal</span>
+                            <span style="color: #fff; font-size: 13px; font-weight: 600;">৳${invoice.subtotal.toLocaleString()}</span>
+                        </div>
+                        ${invoice.discount > 0 ? `
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                <span style="color: #8b92b0; font-size: 12px;">Discount (${invoice.discount}%)</span>
+                                <span style="color: #00ff88; font-size: 13px; font-weight: 600;">-৳${invoice.discountAmount.toLocaleString()}</span>
+                            </div>
+                        ` : ''}
+                        <div style="display: flex; justify-content: space-between; padding-top: 10px; border-top: 1px solid #2a2f45;">
+                            <span style="color: #fff; font-weight: 600; font-size: 16px;">Total</span>
+                            <span style="color: #00d4ff; font-weight: 700; font-size: 20px;">৳${invoice.total.toLocaleString()}</span>
+                        </div>
+                    </div>
+                </div>
+
+                ${invoice.status === 'paid' ? `
+                    <div style="background: rgba(0, 255, 136, 0.1); border: 1px solid #00ff88; padding: 12px; border-radius: 10px; text-align: center; margin-bottom: 15px;">
+                        <div style="color: #00ff88; font-size: 13px; font-weight: 600; margin-bottom: 3px;">✓ Payment Completed</div>
+                        <div style="color: #8b92b0; font-size: 11px;">via ${invoice.paymentMethod} on ${invoice.paidDate}</div>
+                    </div>
+                ` : ''}
+
+                <!-- Actions -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <button class="secondary-button" onclick="downloadInvoice('${invoice.id}')" style="width: 100%; padding: 12px;">
+                        📥 Download PDF
+                    </button>
+                    ${invoice.status !== 'paid' ? `
+                        <button class="primary-button" onclick="payInvoice('${invoice.id}')" style="width: 100%; padding: 12px;">
+                            <span class="primary-button-text">💳 Pay Now</span>
+                        </button>
+                    ` : `
+                        <button class="secondary-button" onclick="alert('Receipt sent to your email!')" style="width: 100%; padding: 12px;">
+                            📧 Email Receipt
+                        </button>
+                    `}
+                </div>
+            `;
+
+            document.getElementById('invoiceModal').style.display = 'flex';
+        }
+
+        function closeInvoiceModal() {
+            document.getElementById('invoiceModal').style.display = 'none';
+        }
+
+        function downloadInvoice(id) {
+            alert(`Downloading invoice ${id} as PDF...`);
+        }
+
+        function payInvoice(id) {
+            const invoice = invoices.find(inv => inv.id === id);
+            if (confirm(`Pay ৳${invoice.total.toLocaleString()} to ${invoice.supplier}?\n\nThis will redirect you to payment gateway.`)) {
+                alert('Payment successful! Invoice marked as paid.');
+                invoice.status = 'paid';
+                invoice.paidDate = '2025-11-01';
+                closeInvoiceModal();
+                renderInvoices();
+            }
+        }
+
+        // Initialize
+        renderInvoices();
+    </script>
+
+    <style>
+        .filter-chip {
+            background: #1a1f3a;
+            border: 1px solid #2a2f45;
+            color: #8b92b0;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .filter-chip.active {
+            background: linear-gradient(135deg, #00d4ff 0%, #0066cc 100%);
+            border-color: #00d4ff;
+            color: #fff;
+            font-weight: 600;
+        }
+    </style>
+
+    <script src="navigation.js"></script>
+    <script>
+        // Inject navigation
+        document.getElementById('navigationContainer').innerHTML = generateMobileNav('retailer');
+    </script>
+</body>
+</html>
+    </style>
+</body>
+</html>

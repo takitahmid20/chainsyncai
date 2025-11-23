@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChainSync AI - Sign Up</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="scroll-content">
+            <!-- Header -->
+            <div class="header">
+                <div class="logo-container">
+                    <div class="logo-circle">
+                        <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke-width="2">
+                            <circle cx="12" cy="12" r="2"/>
+                            <circle cx="12" cy="5" r="2"/>
+                            <circle cx="19" cy="12" r="2"/>
+                            <circle cx="5" cy="12" r="2"/>
+                            <line x1="12" y1="7" x2="12" y2="10"/>
+                            <line x1="14" y1="12" x2="17" y2="12"/>
+                            <line x1="7" y1="12" x2="10" y2="12"/>
+                        </svg>
+                    </div>
+                    <div class="logo">ChainSync AI</div>
+                </div>
+                <h1 class="welcome-text">Create Account</h1>
+                <p class="subtitle">Join our smart supply chain network</p>
+            </div>
+
+            <!-- Form -->
+            <div class="form">
+                <!-- User Type Selector -->
+                <div class="section-container">
+                    <div class="section-title">Select Your Business Type</div>
+                    <div class="user-type-grid">
+                        <div class="user-type-card" onclick="selectUserType(this, 'manufacturer')">
+                            <svg class="user-type-icon" viewBox="0 0 24 24" fill="none" stroke-width="2">
+                                <rect x="2" y="9" width="20" height="11" rx="2"/>
+                                <path d="M6 9V4a2 2 0 012-2h8a2 2 0 012 2v5"/>
+                            </svg>
+                            <div class="user-type-label">Manufacturer / SME</div>
+                        </div>
+                        <div class="user-type-card" onclick="selectUserType(this, 'supplier')">
+                            <svg class="user-type-icon" viewBox="0 0 24 24" fill="none" stroke-width="2">
+                                <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                                <polyline points="9 22 9 12 15 12 15 22"/>
+                            </svg>
+                            <div class="user-type-label">Supplier / Vendor</div>
+                        </div>
+                        <div class="user-type-card" onclick="selectUserType(this, 'retailer')">
+                            <svg class="user-type-icon" viewBox="0 0 24 24" fill="none" stroke-width="2">
+                                <circle cx="9" cy="21" r="1"/>
+                                <circle cx="20" cy="21" r="1"/>
+                                <path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/>
+                            </svg>
+                            <div class="user-type-label">Retailer / Distributor</div>
+                        </div>
+                        <div class="user-type-card" onclick="selectUserType(this, 'logistics')">
+                            <svg class="user-type-icon" viewBox="0 0 24 24" fill="none" stroke-width="2">
+                                <path d="M14 16V8a2 2 0 00-2-2H4a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2z"/>
+                                <path d="M18 12h4l3 3v4h-3"/>
+                                <circle cx="7" cy="20" r="2"/>
+                                <circle cx="17" cy="20" r="2"/>
+                            </svg>
+                            <div class="user-type-label">Logistics Partner</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Company Name -->
+                <div class="input-container">
+                    <label class="label">Company Name</label>
+                    <div class="input-wrapper">
+                        <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke-width="2">
+                            <rect x="2" y="9" width="20" height="11" rx="2"/>
+                            <path d="M6 9V4a2 2 0 012-2h8a2 2 0 012 2v5"/>
+                        </svg>
+                        <input type="text" id="companyName" placeholder="Enter your company name">
+                    </div>
+                </div>
+
+                <!-- Full Name -->
+                <div class="input-container">
+                    <label class="label">Full Name</label>
+                    <div class="input-wrapper">
+                        <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                        <input type="text" id="fullName" placeholder="Enter your full name">
+                    </div>
+                </div>
+
+                <!-- Business Email -->
+                <div class="input-container">
+                    <label class="label">Business Email</label>
+                    <div class="input-wrapper">
+                        <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke-width="2">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                            <polyline points="22,6 12,13 2,6"/>
+                        </svg>
+                        <input type="email" id="email" placeholder="company@example.com">
+                    </div>
+                </div>
+
+                <!-- Phone Number -->
+                <div class="input-container">
+                    <label class="label">Phone Number</label>
+                    <div class="input-wrapper">
+                        <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke-width="2">
+                            <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/>
+                        </svg>
+                        <input type="tel" id="phone" placeholder="+880 1XXX-XXXXXX">
+                    </div>
+                </div>
+
+                <!-- Password -->
+                <div class="input-container">
+                    <label class="label">Password</label>
+                    <div class="input-wrapper">
+                        <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke-width="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                            <path d="M7 11V7a5 5 0 0110 0v4"/>
+                        </svg>
+                        <input type="password" id="password" placeholder="Create a strong password">
+                        <button class="eye-button" onclick="togglePassword('password', this)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Confirm Password -->
+                <div class="input-container">
+                    <label class="label">Confirm Password</label>
+                    <div class="input-wrapper">
+                        <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke-width="2">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                            <path d="M9 12l2 2 4-4"/>
+                        </svg>
+                        <input type="password" id="confirmPassword" placeholder="Confirm your password">
+                        <button class="eye-button" onclick="togglePassword('confirmPassword', this)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Create Account Button -->
+                <button class="primary-button" onclick="handleSignUp()">
+                    <span class="primary-button-text">Create Account</span>
+                </button>
+
+                <!-- Sign In Link -->
+                <div class="footer">
+                    <span class="footer-text">Already have an account? </span>
+                    <a href="signin.html" class="link-text">Login</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedUserType = '';
+
+        function selectUserType(element, type) {
+            document.querySelectorAll('.user-type-card').forEach(card => {
+                card.classList.remove('selected');
+                const badge = card.querySelector('.selected-badge');
+                if (badge) badge.remove();
+            });
+
+            element.classList.add('selected');
+            selectedUserType = type;
+
+            const badge = document.createElement('div');
+            badge.className = 'selected-badge';
+            badge.innerHTML = `
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="3">
+                    <polyline points="20 6 9 17 4 12"/>
+                </svg>
+            `;
+            element.appendChild(badge);
+        }
+
+        function togglePassword(inputId, button) {
+            const input = document.getElementById(inputId);
+            input.type = input.type === 'password' ? 'text' : 'password';
+        }
+
+        function handleSignUp() {
+            alert('This is a demo. Please view the dashboards directly from the sign-in page.');
+            window.location.href = 'signin.html';
+        }
+    </script>
+</body>
+</html>

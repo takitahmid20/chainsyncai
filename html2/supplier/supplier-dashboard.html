@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supplier Dashboard - ChainSync AI</title>
+    <link rel="stylesheet" href="supplier-styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Top Navbar -->
+        <nav class="top-navbar">
+            <button class="hamburger-btn" onclick="toggleSidebar()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+            <div class="navbar-brand">
+                <h2>ChainSync AI - Supplier</h2>
+            </div>
+            <div class="navbar-actions">
+                <button class="nav-action-btn notification-btn" onclick="showNotifications()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <span class="notification-badge">5</span>
+                </button>
+                <button class="nav-action-btn avatar-btn" onclick="openProfile()">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='16' fill='%236366f1'/%3E%3Ctext x='16' y='21' text-anchor='middle' fill='white' font-size='14' font-weight='bold'%3ES%3C/text%3E%3C/svg%3E" alt="Profile">
+                </button>
+            </div>
+        </nav>
+
+        <!-- Sidebar Menu -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-profile">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Ccircle cx='30' cy='30' r='30' fill='%236366f1'/%3E%3Ctext x='30' y='38' text-anchor='middle' fill='white' font-size='24' font-weight='bold'%3ES%3C/text%3E%3C/svg%3E" alt="Profile">
+                    <div class="sidebar-user-info">
+                        <h3>Unilever BD</h3>
+                        <p>contact@unilever.com</p>
+                    </div>
+                </div>
+                <button class="sidebar-close" onclick="toggleSidebar()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="supplier-dashboard.html" class="sidebar-nav-item active">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
+                <a href="supplier-orders.html" class="sidebar-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 11l3 3L22 4"></path>
+                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                    </svg>
+                    <span>Orders</span>
+                </a>
+                <a href="supplier-products.html" class="sidebar-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                        <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                        <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                    </svg>
+                    <span>Products & Inventory</span>
+                </a>
+                <a href="supplier-retailers.html" class="sidebar-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    <span>Retailers</span>
+                </a>
+                <a href="supplier-finance.html" class="sidebar-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="1" x2="12" y2="23"></line>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                    <span>Finance & Payments</span>
+                </a>
+                <a href="supplier-logistics.html" class="sidebar-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="1" y="3" width="15" height="13"></rect>
+                        <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+                        <circle cx="5.5" cy="18.5" r="2.5"></circle>
+                        <circle cx="18.5" cy="18.5" r="2.5"></circle>
+                    </svg>
+                    <span>Logistics & Delivery</span>
+                </a>
+                <a href="supplier-analytics.html" class="sidebar-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                    </svg>
+                    <span>Analytics & Reports</span>
+                </a>
+                <a href="supplier-ai.html" class="sidebar-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                        <path d="M2 17l10 5 10-5"></path>
+                        <path d="M2 12l10 5 10-5"></path>
+                    </svg>
+                    <span>AI Assistant</span>
+                </a>
+                <a href="settings.html" class="sidebar-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M12 1v6m0 6v6M4.93 4.93l4.24 4.24m5.66 5.66l4.24 4.24M1 12h6m6 0h6M4.93 19.07l4.24-4.24m5.66-5.66l4.24-4.24"></path>
+                    </svg>
+                    <span>Settings</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Greeting Section -->
+            <div class="greeting-section">
+                <h1>Welcome back, Unilever BD!</h1>
+                <p>Here's what's happening with your business today</p>
+            </div>
+
+            <!-- Quick Action Features -->
+            <div class="features-scroll-container">
+                <div class="features-row">
+                    <div class="feature-box" onclick="location.href='supplier-products.html'">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                        </div>
+                        <div class="feature-name">Add Product</div>
+                    </div>
+                    <div class="feature-box" onclick="location.href='supplier-products.html'">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="23 4 23 10 17 10"></polyline>
+                                <polyline points="1 20 1 14 7 14"></polyline>
+                                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                            </svg>
+                        </div>
+                        <div class="feature-name">Sync Inventory</div>
+                    </div>
+                    <div class="feature-box" onclick="location.href='supplier-ai.html'">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                            </svg>
+                        </div>
+                        <div class="feature-name">AI Forecast</div>
+                    </div>
+                    <div class="feature-box" onclick="location.href='supplier-orders.html'">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M9 11l3 3L22 4"></path>
+                                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                            </svg>
+                        </div>
+                        <div class="feature-name">View Orders</div>
+                    </div>
+                    <div class="feature-box" onclick="location.href='supplier-retailers.html'">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            </svg>
+                        </div>
+                        <div class="feature-name">Retailers</div>
+                    </div>
+                    <div class="feature-box" onclick="location.href='supplier-logistics.html'">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="1" y="3" width="15" height="13"></rect>
+                                <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+                                <circle cx="5.5" cy="18.5" r="2.5"></circle>
+                                <circle cx="18.5" cy="18.5" r="2.5"></circle>
+                            </svg>
+                        </div>
+                        <div class="feature-name">Deliveries</div>
+                    </div>
+                    <div class="feature-box" onclick="location.href='supplier-finance.html'">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="1" x2="12" y2="23"></line>
+                                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                            </svg>
+                        </div>
+                        <div class="feature-name">Payments</div>
+                    </div>
+                    <div class="feature-box" onclick="location.href='supplier-analytics.html'">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="20" x2="18" y2="10"></line>
+                                <line x1="12" y1="20" x2="12" y2="4"></line>
+                                <line x1="6" y1="20" x2="6" y2="14"></line>
+                            </svg>
+                        </div>
+                        <div class="feature-name">Reports</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top KPIs Section -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="1" x2="12" y2="23"></line>
+                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                        </svg>
+                    </div>
+                    <div class="stat-info">
+                        <p class="stat-label">Total Sales</p>
+                        <h3 class="stat-value">৳2.4M</h3>
+                        <p class="stat-change positive">+18.5% from last month</p>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 11l3 3L22 4"></path>
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                        </svg>
+                    </div>
+                    <div class="stat-info">
+                        <p class="stat-label">Live Orders</p>
+                        <h3 class="stat-value">42</h3>
+                        <p class="stat-change">12 pending, 30 in transit</p>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                            <line x1="12" y1="9" x2="12" y2="13"></line>
+                            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                        </svg>
+                    </div>
+                    <div class="stat-info">
+                        <p class="stat-label">Low Stock SKUs</p>
+                        <h3 class="stat-value">8</h3>
+                        <p class="stat-change negative">Immediate action needed</p>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="1" y="3" width="15" height="13"></rect>
+                            <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+                            <circle cx="5.5" cy="18.5" r="2.5"></circle>
+                            <circle cx="18.5" cy="18.5" r="2.5"></circle>
+                        </svg>
+                    </div>
+                    <div class="stat-info">
+                        <p class="stat-label">Delivery Efficiency</p>
+                        <h3 class="stat-value">94.2%</h3>
+                        <p class="stat-change positive">+2.3% this week</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Insights Widget -->
+            <div class="section-header">
+                <h2>AI-Powered Insights</h2>
+                <button class="action-btn" onclick="location.href='supplier-ai.html'">View All</button>
+            </div>
+
+            <div class="insights-container">
+                <div class="insight-card priority-high">
+                    <div class="insight-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+                        </svg>
+                    </div>
+                    <div class="insight-content">
+                        <h4>Demand Surge Predicted</h4>
+                        <p>Next 7 days demand up by <strong>+14% for Detergent SKUs</strong>. Recommend increasing production by 500 units.</p>
+                        <div class="insight-meta">
+                            <span class="insight-tag">High Priority</span>
+                            <span class="insight-time">AI Prediction • 2 hours ago</span>
+                        </div>
+                    </div>
+                    <button class="insight-action-btn">Take Action</button>
+                </div>
+
+                <div class="insight-card priority-medium">
+                    <div class="insight-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                        </svg>
+                    </div>
+                    <div class="insight-content">
+                        <h4>Payment Alert</h4>
+                        <p><strong>3 retailers nearing credit limit</strong> — suggest payment reminder. Total outstanding: ৳180,000</p>
+                        <div class="insight-meta">
+                            <span class="insight-tag warning">Action Needed</span>
+                            <span class="insight-time">Financial Alert • 5 hours ago</span>
+                        </div>
+                    </div>
+                    <button class="insight-action-btn">Send Reminder</button>
+                </div>
+
+                <div class="insight-card priority-low">
+                    <div class="insight-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                            <polyline points="17 6 23 6 23 12"></polyline>
+                        </svg>
+                    </div>
+                    <div class="insight-content">
+                        <h4>Growth Opportunity</h4>
+                        <p>Peak season approaching. Historical data shows <strong>22% sales increase in next month</strong>. Stock up beverages and snacks.</p>
+                        <div class="insight-meta">
+                            <span class="insight-tag success">Opportunity</span>
+                            <span class="insight-time">Market Trend • Today</span>
+                        </div>
+                    </div>
+                    <button class="insight-action-btn">View Details</button>
+                </div>
+            </div>
+
+            <!-- Order Summary Table -->
+            <div class="section-header">
+                <h2>Recent Orders</h2>
+                <button class="action-btn" onclick="location.href='supplier-orders.html'">View All Orders</button>
+            </div>
+
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Retailer</th>
+                            <th>Products</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Delivery Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="order-id">#ORD-2847</span></td>
+                            <td>
+                                <div class="retailer-info">
+                                    <strong>Rahman Store</strong>
+                                    <span>Dhaka, Mirpur</span>
+                                </div>
+                            </td>
+                            <td>Detergent (50), Soap (100)</td>
+                            <td><strong>৳45,000</strong></td>
+                            <td><span class="status-badge in-transit">In Transit</span></td>
+                            <td>Nov 10, 2025</td>
+                            <td>
+                                <button class="action-icon-btn" title="Track Order">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <polyline points="12 6 12 12 16 14"></polyline>
+                                    </svg>
+                                </button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><span class="order-id">#ORD-2846</span></td>
+                            <td>
+                                <div class="retailer-info">
+                                    <strong>Karim's Shop</strong>
+                                    <span>Chittagong</span>
+                                </div>
+                            </td>
+                            <td>Shampoo (75), Toothpaste (120)</td>
+                            <td><strong>৳62,500</strong></td>
+                            <td><span class="status-badge processing">Processing</span></td>
+                            <td>Nov 12, 2025</td>
+                            <td>
+                                <button class="action-icon-btn" title="Process Order">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                </button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><span class="order-id">#ORD-2845</span></td>
+                            <td>
+                                <div class="retailer-info">
+                                    <strong>Smart Mart</strong>
+                                    <span>Sylhet</span>
+                                </div>
+                            </td>
+                            <td>Beverages (200), Snacks (150)</td>
+                            <td><strong>৳88,000</strong></td>
+                            <td><span class="status-badge confirmed">Confirmed</span></td>
+                            <td>Nov 15, 2025</td>
+                            <td>
+                                <button class="action-icon-btn" title="Start Processing">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                    </svg>
+                                </button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><span class="order-id">#ORD-2844</span></td>
+                            <td>
+                                <div class="retailer-info">
+                                    <strong>City Store</strong>
+                                    <span>Rajshahi</span>
+                                </div>
+                            </td>
+                            <td>Cooking Oil (80), Rice (100kg)</td>
+                            <td><strong>৳95,000</strong></td>
+                            <td><span class="status-badge pending">Pending</span></td>
+                            <td>Nov 14, 2025</td>
+                            <td>
+                                <button class="action-icon-btn" title="Confirm Order">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                </button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><span class="order-id">#ORD-2843</span></td>
+                            <td>
+                                <div class="retailer-info">
+                                    <strong>Metro Bazaar</strong>
+                                    <span>Khulna</span>
+                                </div>
+                            </td>
+                            <td>Cosmetics (60), Toiletries (90)</td>
+                            <td><strong>৳72,000</strong></td>
+                            <td><span class="status-badge delivered">Delivered</span></td>
+                            <td>Nov 8, 2025</td>
+                            <td>
+                                <button class="action-icon-btn" title="View Details">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                    </svg>
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- AI Chat Box -->
+            <div class="section-header">
+                <h2>Ask AI Assistant</h2>
+            </div>
+
+            <div class="ai-chat-widget">
+                <div class="chat-widget-header">
+                    <div class="chat-widget-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                            <path d="M2 17l10 5 10-5"></path>
+                            <path d="M2 12l10 5 10-5"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h4>AI Business Assistant</h4>
+                        <p>Ask about daily sales, retailer performance, or get insights</p>
+                    </div>
+                </div>
+                <div class="chat-widget-suggestions">
+                    <button class="suggestion-chip" onclick="askAI('What are my daily sales?')">
+                        📊 What are my daily sales?
+                    </button>
+                    <button class="suggestion-chip" onclick="askAI('Which retailer is performing best?')">
+                        🏆 Which retailer is performing best?
+                    </button>
+                    <button class="suggestion-chip" onclick="askAI('Show me low stock products')">
+                        📦 Show me low stock products
+                    </button>
+                    <button class="suggestion-chip" onclick="askAI('Predict next week demand')">
+                        🔮 Predict next week demand
+                    </button>
+                </div>
+                <div class="chat-widget-input">
+                    <input type="text" placeholder="Ask me anything about your business..." id="aiChatInput">
+                    <button class="send-btn" onclick="sendAIMessage()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav">
+            <button class="nav-item active" onclick="window.location.href='supplier-dashboard.html'">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                </svg>
+                <span class="nav-label">Home</span>
+            </button>
+            <button class="nav-item" onclick="window.location.href='supplier-orders.html'">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 11l3 3L22 4"></path>
+                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                </svg>
+                <span class="nav-label">Orders</span>
+            </button>
+            <button class="nav-item" onclick="window.location.href='supplier-ai.html'">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                    <path d="M2 17l10 5 10-5"></path>
+                    <path d="M2 12l10 5 10-5"></path>
+                </svg>
+                <span class="nav-label">AI</span>
+            </button>
+            <button class="nav-item" onclick="window.location.href='profile.html'">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                <span class="nav-label">Profile</span>
+            </button>
+        </nav>
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('show');
+            overlay.classList.toggle('show');
+        }
+
+        function showNotifications() {
+            alert('Notifications:\n• 5 new orders received\n• 3 retailers near credit limit\n• Low stock alert for 8 products');
+        }
+
+        function openProfile() {
+            window.location.href = 'profile.html';
+        }
+
+        function askAI(question) {
+            document.getElementById('aiChatInput').value = question;
+            sendAIMessage();
+        }
+
+        function sendAIMessage() {
+            const input = document.getElementById('aiChatInput');
+            const message = input.value.trim();
+            if (message) {
+                alert('AI Response for: "' + message + '"\n\nThis feature will be available soon!');
+                input.value = '';
+            }
+        }
+
+        // Allow Enter key to send message
+        document.getElementById('aiChatInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendAIMessage();
+            }
+        });
+    </script>
+</body>
+</html>

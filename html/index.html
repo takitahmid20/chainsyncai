@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChainSync AI - Splash</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="splash-screen">
+        <div class="splash-content">
+            <svg class="splash-icon" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" stroke-width="2">
+                <circle cx="12" cy="12" r="2"/>
+                <circle cx="12" cy="5" r="2"/>
+                <circle cx="19" cy="12" r="2"/>
+                <circle cx="5" cy="12" r="2"/>
+                <line x1="12" y1="7" x2="12" y2="10"/>
+                <line x1="14" y1="12" x2="17" y2="12"/>
+                <line x1="7" y1="12" x2="10" y2="12"/>
+            </svg>
+            <h1 class="splash-logo">ChainSync AI</h1>
+            <p class="splash-tagline">Smart Supply Chain Management</p>
+        </div>
+    </div>
+
+    <script>
+        // Auto redirect to onboarding after animation
+        setTimeout(() => {
+            window.location.href = 'onboarding.html';
+        }, 2500);
+
+        // Quick keyboard shortcuts for testing
+        document.addEventListener('keydown', (e) => {
+            if (e.key === '1') window.location.href = 'manufacturer-dashboard.html';
+            if (e.key === '2') window.location.href = 'supplier-dashboard.html';
+            if (e.key === '3') window.location.href = 'retailer-dashboard.html';
+            if (e.key === '4') window.location.href = 'logistics-dashboard.html';
+        });
+    </script>
+</body>
+</html>

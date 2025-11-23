@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChainSync AI - OTP Verification</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="scroll-content">
+            <!-- Header -->
+            <div class="header" style="position: relative;">
+                <button class="back-button" onclick="window.history.back()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                        <line x1="19" y1="12" x2="5" y2="12"/>
+                        <polyline points="12 19 5 12 12 5"/>
+                    </svg>
+                </button>
+
+                <div class="icon-container">
+                    <div class="icon-circle">
+                        <svg class="large-icon" viewBox="0 0 24 24" fill="none" stroke-width="2">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                            <polyline points="22,6 12,13 2,6"/>
+                            <circle cx="18" cy="8" r="3" fill="#00d4ff"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <h1 class="welcome-text">Verify Your Email</h1>
+                <p class="subtitle">We've sent a 4-digit verification code to your email address. Please enter it below.</p>
+            </div>
+
+            <!-- Form -->
+            <div class="form">
+                <!-- OTP Input -->
+                <div class="otp-container" style="display: flex; justify-content: center; gap: 15px; margin: 40px 0;">
+                    <input type="text" inputmode="numeric" pattern="[0-9]" class="otp-input" maxlength="1" id="otp1" oninput="handleOTPInput(this, 'otp2')" onkeydown="handleBackspace(event, this, null)" style="width: 60px; height: 60px; text-align: center; font-size: 28px; font-weight: 600; border: 2px solid #2a2f45; border-radius: 12px; background: #1a1f3a; color: #fff; transition: all 0.3s ease;">
+                    <input type="text" inputmode="numeric" pattern="[0-9]" class="otp-input" maxlength="1" id="otp2" oninput="handleOTPInput(this, 'otp3')" onkeydown="handleBackspace(event, this, 'otp1')" style="width: 60px; height: 60px; text-align: center; font-size: 28px; font-weight: 600; border: 2px solid #2a2f45; border-radius: 12px; background: #1a1f3a; color: #fff; transition: all 0.3s ease;">
+                    <input type="text" inputmode="numeric" pattern="[0-9]" class="otp-input" maxlength="1" id="otp3" oninput="handleOTPInput(this, 'otp4')" onkeydown="handleBackspace(event, this, 'otp2')" style="width: 60px; height: 60px; text-align: center; font-size: 28px; font-weight: 600; border: 2px solid #2a2f45; border-radius: 12px; background: #1a1f3a; color: #fff; transition: all 0.3s ease;">
+                    <input type="text" inputmode="numeric" pattern="[0-9]" class="otp-input" maxlength="1" id="otp4" oninput="handleOTPInput(this, null)" onkeydown="handleBackspace(event, this, 'otp3')" style="width: 60px; height: 60px; text-align: center; font-size: 28px; font-weight: 600; border: 2px solid #2a2f45; border-radius: 12px; background: #1a1f3a; color: #fff; transition: all 0.3s ease;">
+                </div>
+
+                <!-- Timer -->
+                <div class="timer-container" style="text-align: center; margin: 20px 0;">
+                    <span class="timer-text" id="timerText" style="color: #8b92b0; font-size: 14px;">Resend code in <span class="timer-count" style="color: #00d4ff; font-weight: 600;">48s</span></span>
+                    <span class="resend-text hidden" id="resendBtn" onclick="resendOTP()" style="color: #00d4ff; font-size: 14px; font-weight: 600; cursor: pointer;">Resend Code</span>
+                </div>
+
+                <!-- Verify Button -->
+                <button class="primary-button" onclick="verifyOTP()">
+                    <span class="primary-button-text">Verify Code</span>
+                </button>
+
+                <!-- Info -->
+                <div class="info-container">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="16" x2="12" y2="12"/>
+                        <line x1="12" y1="8" x2="12.01" y2="8"/>
+                    </svg>
+                    <span class="info-text">Didn't receive the code? Check your spam folder</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .otp-input:focus {
+            outline: none;
+            border-color: #00d4ff !important;
+            box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+        }
+        .otp-input.filled {
+            border-color: #00ff88 !important;
+            background: rgba(0, 255, 136, 0.05) !important;
+        }
+        .hidden {
+            display: none !important;
+        }
+    </style>
+
+    <script>
+        let timer = 48;
+        const interval = setInterval(() => {
+            timer--;
+            if (timer > 0) {
+                document.querySelector('.timer-count').textContent = timer + 's';
+            } else {
+                clearInterval(interval);
+                document.getElementById('timerText').classList.add('hidden');
+                document.getElementById('resendBtn').classList.remove('hidden');
+            }
+        }, 1000);
+
+        function handleOTPInput(current, nextId) {
+            // Only allow numbers
+            current.value = current.value.replace(/[^0-9]/g, '');
+            
+            if (current.value.length === 1) {
+                current.classList.add('filled');
+                if (nextId) {
+                    document.getElementById(nextId).focus();
+                }
+            } else {
+                current.classList.remove('filled');
+            }
+        }
+
+        function handleBackspace(event, current, prevId) {
+            if (event.key === 'Backspace') {
+                if (current.value === '' && prevId) {
+                    const prevInput = document.getElementById(prevId);
+                    prevInput.focus();
+                    prevInput.value = '';
+                    prevInput.classList.remove('filled');
+                } else {
+                    current.value = '';
+                    current.classList.remove('filled');
+                }
+            }
+        }
+
+        function verifyOTP() {
+            const otp = ['otp1', 'otp2', 'otp3', 'otp4']
+                .map(id => document.getElementById(id).value)
+                .join('');
+            
+            if (otp.length !== 4) {
+                alert('Please enter the complete 4-digit verification code!');
+                return;
+            }
+
+            // Simulate verification
+            window.location.href = 'reset-password.html';
+        }
+
+        function resendOTP() {
+            // Clear all inputs
+            ['otp1', 'otp2', 'otp3', 'otp4'].forEach(id => {
+                const input = document.getElementById(id);
+                input.value = '';
+                input.classList.remove('filled');
+            });
+            
+            alert('A new 4-digit verification code has been sent to your email!');
+            timer = 48;
+            document.getElementById('timerText').classList.remove('hidden');
+            document.getElementById('resendBtn').classList.add('hidden');
+            document.querySelector('.timer-count').textContent = '48s';
+            document.getElementById('otp1').focus();
+        }
+
+        // Auto-focus first input on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('otp1').focus();
+        });
+    </script>
+</body>
+</html>

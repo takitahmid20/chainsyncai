@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Reorder System - ChainSync AI</title>
+    <link rel="stylesheet" href="supplier-styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Top Navbar -->
+        <nav class="top-navbar">
+            <button class="hamburger-btn" onclick="toggleSidebar()">
+                <svg fill="none" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                </svg>
+            </button>
+            <div class="navbar-brand">
+                <h2>Smart Reorder System</h2>
+            </div>
+            <div class="navbar-actions">
+                <button class="nav-action-btn" onclick="showNotifications()">
+                    <svg fill="none" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                    </svg>
+                    <span class="notification-badge">7</span>
+                </button>
+                <button class="nav-action-btn avatar-btn" onclick="openProfile()">
+                    <img src="https://ui-avatars.com/api/?name=Unilever+BD&background=6366f1&color=fff" alt="Profile">
+                </button>
+            </div>
+        </nav>
+
+        <!-- Sidebar -->
+        <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <button class="sidebar-close" onclick="toggleSidebar()">
+                    <svg fill="none" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+                <div class="sidebar-profile">
+                    <img src="https://ui-avatars.com/api/?name=Unilever+BD&background=6366f1&color=fff" alt="Profile">
+                    <div class="sidebar-user-info">
+                        <h3>Unilever BD</h3>
+                        <p>Supplier Account</p>
+                    </div>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="supplier-dashboard.html" class="sidebar-nav-item">
+                    <svg fill="none" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                    </svg>
+                    Dashboard
+                </a>
+                <a href="supplier-orders.html" class="sidebar-nav-item">
+                    <svg fill="none" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                    </svg>
+                    Orders
+                </a>
+                <a href="supplier-products.html" class="sidebar-nav-item">
+                    <svg fill="none" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                    </svg>
+                    Products & Inventory
+                </a>
+                <a href="supplier-retailers.html" class="sidebar-nav-item">
+                    <svg fill="none" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                    </svg>
+                    Retailers
+                </a>
+                <a href="supplier-reorder.html" class="sidebar-nav-item active">
+                    <svg fill="none" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+                    </svg>
+                    Smart Reorder
+                </a>
+                <a href="supplier-finance.html" class="sidebar-nav-item">
+                    <svg fill="none" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    Finance & Payments
+                </a>
+                <a href="supplier-logistics.html" class="sidebar-nav-item">
+                    <svg fill="none" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"/>
+                    </svg>
+                    Logistics & Delivery
+                </a>
+                <a href="supplier-analytics.html" class="sidebar-nav-item">
+                    <svg fill="none" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                    </svg>
+                    Analytics & Reports
+                </a>
+                <a href="supplier-ai.html" class="sidebar-nav-item">
+                    <svg fill="none" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                    </svg>
+                    AI Assistant
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- AI Forecast Banner -->
+            <div class="forecast-banner">
+                <div class="forecast-icon">
+                    <svg fill="none" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                    </svg>
+                </div>
+                <div class="forecast-content">
+                    <h3>AI Prediction</h3>
+                    <p><strong>5 retailers</strong> predicted to reorder this week. Send proactive suggestions now to secure orders!</p>
+                </div>
+                <button class="forecast-action-btn" onclick="showPredictedRetailers()">View Predictions</button>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="reorder-stats-grid">
+                <div class="reorder-stat-card high">
+                    <div class="reorder-stat-label">High Probability</div>
+                    <div class="reorder-stat-value">12</div>
+                    <div class="reorder-stat-desc">87-100% chance</div>
+                </div>
+                <div class="reorder-stat-card medium">
+                    <div class="reorder-stat-label">Medium Probability</div>
+                    <div class="reorder-stat-value">8</div>
+                    <div class="reorder-stat-desc">50-86% chance</div>
+                </div>
+                <div class="reorder-stat-card pending">
+                    <div class="reorder-stat-label">Pending Approval</div>
+                    <div class="reorder-stat-value">5</div>
+                    <div class="reorder-stat-desc">Awaiting response</div>
+                </div>
+            </div>
+
+            <!-- Filter Tabs -->
+            <div class="reorder-filter-tabs">
+                <button class="reorder-tab active" onclick="filterReorders('all')">
+                    All Retailers <span class="tab-badge">20</span>
+                </button>
+                <button class="reorder-tab" onclick="filterReorders('hot')">
+                    🔥 Hot Buyers <span class="tab-badge">8</span>
+                </button>
+                <button class="reorder-tab" onclick="filterReorders('growing')">
+                    📈 Growing <span class="tab-badge">5</span>
+                </button>
+                <button class="reorder-tab" onclick="filterReorders('dormant')">
+                    💤 Dormant <span class="tab-badge">7</span>
+                </button>
+            </div>
+
+            <!-- Reorder Opportunities List -->
+            <div class="reorder-list">
+                <!-- High Priority Card 1 -->
+                <div class="reorder-card" data-category="hot" data-probability="high">
+                    <div class="reorder-card-header">
+                        <div class="retailer-avatar-small">
+                            <img src="https://ui-avatars.com/api/?name=Al-Amin+Traders&background=10b981&color=fff" alt="Al-Amin">
+                        </div>
+                        <div class="retailer-basic-info">
+                            <h4>Al-Amin Traders</h4>
+                            <p>📍 Dhaka, Mirpur</p>
+                        </div>
+                        <div class="engagement-badge hot">
+                            🔥 Hot Buyer
+                        </div>
+                    </div>
+
+                    <div class="reorder-probability-bar">
+                        <div class="probability-label">
+                            <span>Reorder Probability</span>
+                            <span class="probability-value">87%</span>
+                        </div>
+                        <div class="probability-track">
+                            <div class="probability-fill" style="width: 87%"></div>
+                        </div>
+                    </div>
+
+                    <div class="reorder-metrics-row">
+                        <div class="reorder-metric-item">
+                            <div class="metric-icon">💰</div>
+                            <div class="metric-info">
+                                <div class="metric-mini-label">Avg Order Value</div>
+                                <div class="metric-mini-value">৳45,000</div>
+                            </div>
+                        </div>
+                        <div class="reorder-metric-item">
+                            <div class="metric-icon">📅</div>
+                            <div class="metric-info">
+                                <div class="metric-mini-label">Reorder Cycle</div>
+                                <div class="metric-mini-value">Every 10 days</div>
+                            </div>
+                        </div>
+                        <div class="reorder-metric-item">
+                            <div class="metric-icon">🕐</div>
+                            <div class="metric-info">
+                                <div class="metric-mini-label">Last Order</div>
+                                <div class="metric-mini-value">8 days ago</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ai-insight-box">
+                        <div class="ai-insight-icon">🤖</div>
+                        <div class="ai-insight-text">
+                            AI predicts: <strong>Next reorder in 2 days</strong>. Top products: Detergent X (30 units), Soap Y (20 boxes)
+                        </div>
+                    </div>
+
+                    <div class="top-products-preview">
+                        <div class="products-preview-label">Top SKU Preferences:</div>
+                        <div class="products-chips">
+                            <span class="product-chip">Detergent X</span>
+                            <span class="product-chip">Soap Y</span>
+                            <span class="product-chip">Lux 100g</span>
+                        </div>
+                    </div>
+
+                    <div class="relationship-health">
+                        <div class="health-label">Relationship Health Score</div>
+                        <div class="health-score excellent">92/100</div>
+                    </div>
+
+                    <button class="send-reorder-btn" onclick="openReorderModal('al-amin')">
+                        <svg fill="none" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+                        </svg>
+                        Send Reorder Suggestion
+                    </button>
+                </div>
+
+                <!-- Medium Priority Card 2 -->
+                <div class="reorder-card" data-category="hot" data-probability="medium">
+                    <div class="reorder-card-header">
+                        <div class="retailer-avatar-small">
+                            <img src="https://ui-avatars.com/api/?name=Bismillah+Store&background=6366f1&color=fff" alt="Bismillah">
+                        </div>
+                        <div class="retailer-basic-info">
+                            <h4>Bismillah Store</h4>
+                            <p>📍 Narayanganj</p>
+                        </div>
+                        <div class="engagement-badge regular">
+                            Regular Buyer
+                        </div>
+                    </div>
+
+                    <div class="reorder-probability-bar">
+                        <div class="probability-label">
+                            <span>Reorder Probability</span>
+                            <span class="probability-value">72%</span>
+                        </div>
+                        <div class="probability-track">
+                            <div class="probability-fill" style="width: 72%"></div>
+                        </div>
+                    </div>
+
+                    <div class="reorder-metrics-row">
+                        <div class="reorder-metric-item">
+                            <div class="metric-icon">💰</div>
+                            <div class="metric-info">
+                                <div class="metric-mini-label">Avg Order Value</div>
+                                <div class="metric-mini-value">৳32,000</div>
+                            </div>
+                        </div>
+                        <div class="reorder-metric-item">
+                            <div class="metric-icon">📅</div>
+                            <div class="metric-info">
+                                <div class="metric-mini-label">Reorder Cycle</div>
+                                <div class="metric-mini-value">Every 14 days</div>
+                            </div>
+                        </div>
+                        <div class="reorder-metric-item">
+                            <div class="metric-icon">🕐</div>
+                            <div class="metric-info">
+                                <div class="metric-mini-label">Last Order</div>
+                                <div class="metric-mini-value">12 days ago</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ai-insight-box">
+                        <div class="ai-insight-icon">🤖</div>
+                        <div class="ai-insight-text">
+                            AI predicts: <strong>Reorder window open now</strong>. Consider offering 3% discount for early confirmation.
+                        </div>
+                    </div>
+
+                    <div class="top-products-preview">
+                        <div class="products-preview-label">Top SKU Preferences:</div>
+                        <div class="products-chips">
+                            <span class="product-chip">Surf Excel 1kg</span>
+                            <span class="product-chip">Close Up</span>
+                            <span class="product-chip">Horlicks</span>
+                        </div>
+                    </div>
+
+                    <div class="relationship-health">
+                        <div class="health-label">Relationship Health Score</div>
+                        <div class="health-score good">78/100</div>
+                    </div>
+
+                    <button class="send-reorder-btn" onclick="openReorderModal('bismillah')">
+                        <svg fill="none" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+                        </svg>
+                        Send Reorder Suggestion
+                    </button>
+                </div>
+
+                <!-- Growing Partner Card -->
+                <div class="reorder-card" data-category="growing" data-probability="high">
+                    <div class="reorder-card-header">
+                        <div class="retailer-avatar-small">
+                            <img src="https://ui-avatars.com/api/?name=Rahman+Store&background=8b5cf6&color=fff" alt="Rahman">
+                        </div>
+                        <div class="retailer-basic-info">
+                            <h4>Rahman Store</h4>
+                            <p>📍 Chittagong</p>
+                        </div>
+                        <div class="engagement-badge growing">
+                            📈 Growing Buyer
+                        </div>
+                    </div>
+
+                    <div class="reorder-probability-bar">
+                        <div class="probability-label">
+                            <span>Reorder Probability</span>
+                            <span class="probability-value">91%</span>
+                        </div>
+                        <div class="probability-track">
+                            <div class="probability-fill" style="width: 91%"></div>
+                        </div>
+                    </div>
+
+                    <div class="reorder-metrics-row">
+                        <div class="reorder-metric-item">
+                            <div class="metric-icon">💰</div>
+                            <div class="metric-info">
+                                <div class="metric-mini-label">Avg Order Value</div>
+                                <div class="metric-mini-value">৳58,500</div>
+                            </div>
+                        </div>
+                        <div class="reorder-metric-item">
+                            <div class="metric-icon">📅</div>
+                            <div class="metric-info">
+                                <div class="metric-mini-label">Reorder Cycle</div>
+                                <div class="metric-mini-value">Every 7 days</div>
+                            </div>
+                        </div>
+                        <div class="reorder-metric-item">
+                            <div class="metric-icon">🕐</div>
+                            <div class="metric-info">
+                                <div class="metric-mini-label">Last Order</div>
+                                <div class="metric-mini-value">6 days ago</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ai-insight-box trending">
+                        <div class="ai-insight-icon">📈</div>
+                        <div class="ai-insight-text">
+                            <strong>+45% order increase</strong> this month! Suggest bulk bundle to capitalize on growth trend.
+                        </div>
+                    </div>
+
+                    <div class="top-products-preview">
+                        <div class="products-preview-label">Top SKU Preferences:</div>
+                        <div class="products-chips">
+                            <span class="product-chip">Lux Soap</span>
+                            <span class="product-chip">Pepsodent</span>
+                            <span class="product-chip">Dove</span>
+                            <span class="product-chip">+2 more</span>
+                        </div>
+                    </div>
+
+                    <div class="relationship-health">
+                        <div class="health-label">Relationship Health Score</div>
+                        <div class="health-score excellent">95/100</div>
+                    </div>
+
+                    <button class="send-reorder-btn" onclick="openReorderModal('rahman')">
+                        <svg fill="none" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+                        </svg>
+                        Send Reorder Suggestion
+                    </button>
+                </div>
+
+                <!-- Dormant Retailer Card -->
+                <div class="reorder-card dormant-card" data-category="dormant" data-probability="low">
+                    <div class="reorder-card-header">
+                        <div class="retailer-avatar-small">
+                            <img src="https://ui-avatars.com/api/?name=City+Mart&background=9ca3af&color=fff" alt="City">
+                        </div>
+                        <div class="retailer-basic-info">
+                            <h4>City Mart</h4>
+                            <p>📍 Sylhet</p>
+                        </div>
+                        <div class="engagement-badge dormant">
+                            💤 Dormant
+                        </div>
+                    </div>
+
+                    <div class="reorder-probability-bar">
+                        <div class="probability-label">
+                            <span>Reorder Probability</span>
+                            <span class="probability-value">28%</span>
+                        </div>
+                        <div class="probability-track low">
+                            <div class="probability-fill" style="width: 28%"></div>
+                        </div>
+                    </div>
+
+                    <div class="reorder-metrics-row">
+                        <div class="reorder-metric-item">
+                            <div class="metric-icon">💰</div>
+                            <div class="metric-info">
+                                <div class="metric-mini-label">Avg Order Value</div>
+                                <div class="metric-mini-value">৳28,000</div>
+                            </div>
+                        </div>
+                        <div class="reorder-metric-item">
+                            <div class="metric-icon">📅</div>
+                            <div class="metric-info">
+                                <div class="metric-mini-label">Previous Cycle</div>
+                                <div class="metric-mini-value">Every 15 days</div>
+                            </div>
+                        </div>
+                        <div class="reorder-metric-item">
+                            <div class="metric-icon">⚠️</div>
+                            <div class="metric-info">
+                                <div class="metric-mini-label">Last Order</div>
+                                <div class="metric-mini-value warning-text">38 days ago</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ai-insight-box warning">
+                        <div class="ai-insight-icon">⚠️</div>
+                        <div class="ai-insight-text">
+                            Inactive for <strong>38 days</strong>. AI suggests: Send re-engagement offer with 5% discount to revive relationship.
+                        </div>
+                    </div>
+
+                    <div class="top-products-preview">
+                        <div class="products-preview-label">Previously Ordered:</div>
+                        <div class="products-chips">
+                            <span class="product-chip">Wheel</span>
+                            <span class="product-chip">Rin</span>
+                        </div>
+                    </div>
+
+                    <div class="relationship-health">
+                        <div class="health-label">Relationship Health Score</div>
+                        <div class="health-score poor">45/100</div>
+                    </div>
+
+                    <button class="send-reorder-btn revival" onclick="openRevivalModal('city-mart')">
+                        <svg fill="none" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+                        </svg>
+                        Send Revival Offer (5% Off)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Pending Approvals Section -->
+            <div class="pending-approvals-section">
+                <div class="section-header">
+                    <h2>⏳ Pending Retailer Approvals</h2>
+                    <span class="pending-count">5 awaiting response</span>
+                </div>
+
+                <div class="pending-list">
+                    <div class="pending-item">
+                        <div class="pending-retailer">
+                            <img src="https://ui-avatars.com/api/?name=Smart+Mart&background=f59e0b&color=fff" alt="">
+                            <div>
+                                <h5>Smart Mart</h5>
+                                <p>Sent 2 hours ago</p>
+                            </div>
+                        </div>
+                        <div class="pending-products">25 × Lux, 15 × Surf</div>
+                        <div class="pending-value">৳42,500</div>
+                        <button class="pending-action-btn" onclick="viewPendingDetails('smart-mart')">View</button>
+                    </div>
+
+                    <div class="pending-item">
+                        <div class="pending-retailer">
+                            <img src="https://ui-avatars.com/api/?name=Metro+Bazaar&background=10b981&color=fff" alt="">
+                            <div>
+                                <h5>Metro Bazaar</h5>
+                                <p>Sent yesterday</p>
+                            </div>
+                        </div>
+                        <div class="pending-products">40 × Detergent, 20 × Soap</div>
+                        <div class="pending-value">৳68,000</div>
+                        <button class="pending-action-btn" onclick="viewPendingDetails('metro')">View</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav">
+            <button class="nav-item" onclick="location.href='supplier-dashboard.html'">
+                <svg class="nav-icon" fill="none" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                </svg>
+                <span class="nav-label">Home</span>
+            </button>
+            <button class="nav-item" onclick="location.href='supplier-orders.html'">
+                <svg class="nav-icon" fill="none" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                </svg>
+                <span class="nav-label">Orders</span>
+            </button>
+            <button class="nav-item" onclick="location.href='supplier-ai.html'">
+                <svg class="nav-icon" fill="none" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                </svg>
+                <span class="nav-label">AI</span>
+            </button>
+            <button class="nav-item" onclick="location.href='profile.html'">
+                <svg class="nav-icon" fill="none" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                </svg>
+                <span class="nav-label">Profile</span>
+            </button>
+        </nav>
+
+        <!-- Reorder Modal (Hidden by default) -->
+        <div class="reorder-modal" id="reorderModal" style="display: none;">
+            <div class="modal-overlay" onclick="closeReorderModal()"></div>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Send Reorder Suggestion</h3>
+                    <button class="modal-close" onclick="closeReorderModal()">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="modal-retailer-info">
+                        <img src="https://ui-avatars.com/api/?name=Al-Amin+Traders&background=10b981&color=fff" alt="" id="modalRetailerAvatar">
+                        <div>
+                            <h4 id="modalRetailerName">Al-Amin Traders</h4>
+                            <p id="modalRetailerLocation">Dhaka, Mirpur</p>
+                        </div>
+                    </div>
+
+                    <div class="ai-suggested-label">🤖 AI Suggested Products</div>
+                    
+                    <div class="modal-product-list">
+                        <div class="modal-product-item">
+                            <input type="checkbox" checked id="prod1">
+                            <label for="prod1">
+                                <div class="product-name">Detergent X</div>
+                                <div class="product-quantity">
+                                    <button onclick="decreaseQty(1)">−</button>
+                                    <input type="number" value="30" id="qty1">
+                                    <button onclick="increaseQty(1)">+</button>
+                                    <span>cartons</span>
+                                </div>
+                            </label>
+                        </div>
+
+                        <div class="modal-product-item">
+                            <input type="checkbox" checked id="prod2">
+                            <label for="prod2">
+                                <div class="product-name">Soap Y</div>
+                                <div class="product-quantity">
+                                    <button onclick="decreaseQty(2)">−</button>
+                                    <input type="number" value="20" id="qty2">
+                                    <button onclick="increaseQty(2)">+</button>
+                                    <span>boxes</span>
+                                </div>
+                            </label>
+                        </div>
+
+                        <div class="modal-product-item">
+                            <input type="checkbox" id="prod3">
+                            <label for="prod3">
+                                <div class="product-name">Lux Soap 100g</div>
+                                <div class="product-quantity">
+                                    <button onclick="decreaseQty(3)">−</button>
+                                    <input type="number" value="15" id="qty3">
+                                    <button onclick="increaseQty(3)">+</button>
+                                    <span>packs</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="modal-offer-section">
+                        <label class="modal-label">Add Incentive (Optional)</label>
+                        <select class="modal-select">
+                            <option value="">No discount</option>
+                            <option value="2">2% Early Bird Discount</option>
+                            <option value="3" selected>3% Discount (AI Recommended)</option>
+                            <option value="5">5% Special Offer</option>
+                        </select>
+                    </div>
+
+                    <div class="modal-message-section">
+                        <label class="modal-label">Custom Message (Optional)</label>
+                        <textarea class="modal-textarea" placeholder="Add a personalized message..."></textarea>
+                    </div>
+
+                    <div class="modal-summary">
+                        <div class="summary-row">
+                            <span>Estimated Order Value:</span>
+                            <span class="summary-value">৳45,000</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>With 3% Discount:</span>
+                            <span class="summary-value discount">৳43,650</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="modal-btn-cancel" onclick="closeReorderModal()">Cancel</button>
+                    <button class="modal-btn-send" onclick="sendReorderRequest()">
+                        <svg fill="none" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                        </svg>
+                        Send Request
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.querySelector('.sidebar-overlay');
+            sidebar.classList.toggle('show');
+            overlay.classList.toggle('show');
+        }
+
+        function showNotifications() {
+            alert('7 notifications:\n- 5 retailers ready to reorder\n- 2 pending approvals');
+        }
+
+        function openProfile() {
+            location.href = 'profile.html';
+        }
+
+        function filterReorders(category) {
+            const tabs = document.querySelectorAll('.reorder-tab');
+            const cards = document.querySelectorAll('.reorder-card');
+            
+            tabs.forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            cards.forEach(card => {
+                if (category === 'all') {
+                    card.style.display = 'block';
+                } else {
+                    if (card.dataset.category === category) {
+                        card.style.display = 'block';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                }
+            });
+        }
+
+        function showPredictedRetailers() {
+            alert('AI Predictions for next 7 days:\n\n1. Al-Amin Traders - 2 days (87%)\n2. Rahman Store - 1 day (91%)\n3. Bismillah Store - Now (72%)\n4. Smart Mart - 4 days (68%)\n5. Metro Bazaar - 3 days (81%)');
+        }
+
+        function openReorderModal(retailerId) {
+            document.getElementById('reorderModal').style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function openRevivalModal(retailerId) {
+            alert(`Opening revival campaign for ${retailerId}...\n\n5% discount offer ready to send!`);
+        }
+
+        function closeReorderModal() {
+            document.getElementById('reorderModal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        function decreaseQty(productId) {
+            const input = document.getElementById('qty' + productId);
+            if (input.value > 1) {
+                input.value = parseInt(input.value) - 1;
+            }
+        }
+
+        function increaseQty(productId) {
+            const input = document.getElementById('qty' + productId);
+            input.value = parseInt(input.value) + 1;
+        }
+
+        function sendReorderRequest() {
+            alert('✅ Reorder suggestion sent successfully!\n\nThe retailer will receive a notification and can approve, edit, or reject the order.\n\nYou\'ll be notified once they respond.');
+            closeReorderModal();
+        }
+
+        function viewPendingDetails(retailerId) {
+            alert(`Viewing pending request for ${retailerId}...\n\nStatus: Awaiting approval\nYou can follow up or cancel the request.`);
+        }
+    </script>
+</body>
+</html>

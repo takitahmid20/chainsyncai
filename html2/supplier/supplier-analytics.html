@@ -1,0 +1,1348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics & Reports - ChainSync AI</title>
+    <link rel="stylesheet" href="supplier-styles.css">
+    <style>
+        /* Analytics-specific styles */
+        .analytics-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .analytics-stat-card {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 16px;
+        }
+
+        .analytics-stat-card.primary {
+            border-color: #6366f1;
+            background: linear-gradient(135deg, #eef2ff 0%, #fff 100%);
+        }
+
+        .analytics-stat-card.success {
+            border-color: #10b981;
+            background: linear-gradient(135deg, #d1fae5 0%, #fff 100%);
+        }
+
+        .analytics-stat-card.warning {
+            border-color: #f59e0b;
+            background: linear-gradient(135deg, #fef3c7 0%, #fff 100%);
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+        }
+
+        .stat-icon.primary {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        }
+
+        .stat-icon.success {
+            background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+        }
+
+        .stat-icon.warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+        }
+
+        .stat-icon.info {
+            background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+        }
+
+        .stat-icon svg {
+            width: 20px;
+            height: 20px;
+            stroke: white;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 6px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 6px;
+        }
+
+        .stat-change {
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .stat-change.positive {
+            color: #10b981;
+        }
+
+        .stat-change.negative {
+            color: #ef4444;
+        }
+
+        .stat-change svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        /* Chart Card */
+        .chart-card {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .chart-header h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0;
+        }
+
+        .chart-period {
+            display: flex;
+            gap: 6px;
+            background: #f3f4f6;
+            padding: 4px;
+            border-radius: 8px;
+        }
+
+        .period-btn {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            border: none;
+            background: transparent;
+            color: #6b7280;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .period-btn.active {
+            background: white;
+            color: #6366f1;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .chart-placeholder {
+            height: 200px;
+            background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px dashed #d1d5db;
+            margin-bottom: 16px;
+        }
+
+        .chart-placeholder-content {
+            text-align: center;
+            color: #9ca3af;
+        }
+
+        .chart-placeholder-content svg {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 8px;
+            stroke: #d1d5db;
+        }
+
+        .chart-placeholder-content p {
+            font-size: 13px;
+            margin: 0;
+        }
+
+        /* Bar Chart Visualization */
+        .bar-chart {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            height: 160px;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .bar-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .bar {
+            width: 100%;
+            background: linear-gradient(180deg, #6366f1 0%, #8b5cf6 100%);
+            border-radius: 8px 8px 0 0;
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .bar-value {
+            position: absolute;
+            top: -24px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 11px;
+            font-weight: 700;
+            color: #1f2937;
+            white-space: nowrap;
+        }
+
+        .bar-label {
+            font-size: 11px;
+            color: #6b7280;
+            font-weight: 600;
+        }
+
+        /* Product Performance List */
+        .product-performance-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .product-performance-item {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .product-rank {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .product-rank.gold {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: white;
+        }
+
+        .product-rank.silver {
+            background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+            color: white;
+        }
+
+        .product-rank.bronze {
+            background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+            color: white;
+        }
+
+        .product-rank.default {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+
+        .product-info {
+            flex: 1;
+        }
+
+        .product-info h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0 0 4px 0;
+        }
+
+        .product-info p {
+            font-size: 11px;
+            color: #6b7280;
+            margin: 0;
+        }
+
+        .product-metrics {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 2px;
+        }
+
+        .product-metrics strong {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .product-metrics span {
+            font-size: 11px;
+            color: #6b7280;
+        }
+
+        /* Retailer Performance Cards */
+        .retailer-performance-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .retailer-performance-card {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 16px;
+        }
+
+        .retailer-performance-card.top-performer {
+            border-color: #10b981;
+            background: linear-gradient(135deg, #d1fae5 0%, #fff 100%);
+        }
+
+        .retailer-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .retailer-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .retailer-header-info {
+            flex: 1;
+        }
+
+        .retailer-header-info h4 {
+            font-size: 15px;
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0 0 3px 0;
+        }
+
+        .retailer-header-info p {
+            font-size: 12px;
+            color: #6b7280;
+            margin: 0;
+        }
+
+        .performance-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .performance-badge.top {
+            background: #d1fae5;
+            color: #059669;
+        }
+
+        .performance-badge.good {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        .retailer-metrics {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .retailer-metric {
+            text-align: center;
+            padding: 10px;
+            background: #f9fafb;
+            border-radius: 10px;
+        }
+
+        .retailer-metric-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1f2937;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .retailer-metric-label {
+            font-size: 10px;
+            color: #6b7280;
+        }
+
+        /* Market Trends */
+        .trend-card {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+
+        .trend-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .trend-header h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .trend-indicator {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .trend-indicator.up {
+            color: #10b981;
+        }
+
+        .trend-indicator.down {
+            color: #ef4444;
+        }
+
+        .trend-indicator svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .trend-description {
+            font-size: 12px;
+            color: #6b7280;
+            line-height: 1.6;
+            margin-bottom: 12px;
+        }
+
+        .trend-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .trend-stat {
+            background: #f9fafb;
+            padding: 10px;
+            border-radius: 10px;
+        }
+
+        .trend-stat-label {
+            font-size: 11px;
+            color: #6b7280;
+            margin-bottom: 4px;
+        }
+
+        .trend-stat-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        /* AI Forecasting */
+        .forecast-card {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 24px;
+            color: white;
+        }
+
+        .forecast-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .forecast-header h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .forecast-header svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .ai-badge-forecast {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .forecast-period {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-bottom: 16px;
+        }
+
+        .forecast-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .forecast-item {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 12px;
+            backdrop-filter: blur(10px);
+            text-align: center;
+        }
+
+        .forecast-item-label {
+            font-size: 11px;
+            opacity: 0.9;
+            margin-bottom: 6px;
+        }
+
+        .forecast-item-value {
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .forecast-item-change {
+            font-size: 10px;
+            opacity: 0.85;
+            margin-top: 4px;
+        }
+
+        .forecast-insights {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 14px;
+            backdrop-filter: blur(10px);
+        }
+
+        .forecast-insights h4 {
+            font-size: 13px;
+            font-weight: 600;
+            margin: 0 0 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .forecast-insights h4 svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .forecast-insights ul {
+            margin: 0;
+            padding: 0 0 0 18px;
+        }
+
+        .forecast-insights li {
+            font-size: 12px;
+            line-height: 1.6;
+            margin-bottom: 6px;
+            opacity: 0.95;
+        }
+
+        .forecast-insights li:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Report Actions */
+        .report-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+
+        .report-action-btn {
+            padding: 14px;
+            border-radius: 12px;
+            border: 2px solid #e5e7eb;
+            background: white;
+            font-size: 13px;
+            font-weight: 600;
+            color: #1f2937;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .report-action-btn svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+        }
+
+        .report-action-btn:active {
+            transform: scale(0.98);
+            background: #f9fafb;
+        }
+
+        /* Progress Bar */
+        .progress-bar-container {
+            margin-top: 10px;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: #6b7280;
+            margin-bottom: 6px;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: #f3f4f6;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%);
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+
+        .progress-fill.success {
+            background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
+        }
+
+        .progress-fill.warning {
+            background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Top Navbar -->
+        <nav class="top-navbar">
+            <button class="hamburger-btn" onclick="toggleSidebar()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+            <div class="navbar-brand">
+                <h2>Analytics & Reports</h2>
+            </div>
+            <div class="navbar-actions">
+                <button class="nav-action-btn notification-btn" onclick="showNotifications()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <span class="notification-badge">2</span>
+                </button>
+                <button class="nav-action-btn avatar-btn" onclick="openProfile()">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='16' fill='%236366f1'/%3E%3Ctext x='16' y='21' text-anchor='middle' fill='white' font-size='14' font-weight='bold'%3ES%3C/text%3E%3C/svg%3E" alt="Profile">
+                </button>
+            </div>
+        </nav>
+
+        <!-- Sidebar Menu -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-profile">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Ccircle cx='30' cy='30' r='30' fill='%236366f1'/%3E%3Ctext x='30' y='38' text-anchor='middle' fill='white' font-size='24' font-weight='bold'%3ES%3C/text%3E%3C/svg%3E" alt="Profile">
+                    <div class="sidebar-user-info">
+                        <h3>Unilever BD</h3>
+                        <p>contact@unilever.com</p>
+                    </div>
+                </div>
+                <button class="sidebar-close" onclick="toggleSidebar()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="supplier-dashboard.html" class="sidebar-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
+                <a href="supplier-orders.html" class="sidebar-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 11l3 3L22 4"></path>
+                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                    </svg>
+                    <span>Orders</span>
+                </a>
+                <a href="supplier-products.html" class="sidebar-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                        <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                        <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                    </svg>
+                    <span>Products & Inventory</span>
+                </a>
+                <a href="supplier-retailers.html" class="sidebar-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    <span>Retailers</span>
+                </a>
+                <a href="supplier-finance.html" class="sidebar-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="1" x2="12" y2="23"></line>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                    <span>Finance & Payments</span>
+                </a>
+                <a href="supplier-logistics.html" class="sidebar-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="1" y="3" width="15" height="13"></rect>
+                        <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+                        <circle cx="5.5" cy="18.5" r="2.5"></circle>
+                        <circle cx="18.5" cy="18.5" r="2.5"></circle>
+                    </svg>
+                    <span>Logistics & Delivery</span>
+                </a>
+                <a href="supplier-analytics.html" class="sidebar-nav-item active">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                    </svg>
+                    <span>Analytics & Reports</span>
+                </a>
+                <a href="supplier-ai.html" class="sidebar-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                        <path d="M2 17l10 5 10-5"></path>
+                        <path d="M2 12l10 5 10-5"></path>
+                    </svg>
+                    <span>AI Assistant</span>
+                </a>
+                <a href="settings.html" class="sidebar-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M12 1v6m0 6v6M4.93 4.93l4.24 4.24m5.66 5.66l4.24 4.24M1 12h6m6 0h6M4.93 19.07l4.24-4.24m5.66-5.66l4.24-4.24"></path>
+                    </svg>
+                    <span>Settings</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Greeting Section -->
+            <div class="greeting-section">
+                <h1>Analytics & Reports</h1>
+                <p>Data-driven insights for smarter decisions</p>
+            </div>
+
+            <!-- Key Metrics -->
+            <div class="analytics-stats-grid">
+                <div class="analytics-stat-card primary">
+                    <div class="stat-icon primary">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="1" x2="12" y2="23"></line>
+                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                        </svg>
+                    </div>
+                    <div class="stat-label">Total Revenue</div>
+                    <div class="stat-value">৳8.4M</div>
+                    <div class="stat-change positive">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                            <polyline points="17 6 23 6 23 12"></polyline>
+                        </svg>
+                        +24.5% vs last month
+                    </div>
+                </div>
+
+                <div class="analytics-stat-card success">
+                    <div class="stat-icon success">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                        </svg>
+                    </div>
+                    <div class="stat-label">Units Sold</div>
+                    <div class="stat-value">12,456</div>
+                    <div class="stat-change positive">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                            <polyline points="17 6 23 6 23 12"></polyline>
+                        </svg>
+                        +18.2% vs last month
+                    </div>
+                </div>
+
+                <div class="analytics-stat-card">
+                    <div class="stat-icon info">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                    </div>
+                    <div class="stat-label">Active Retailers</div>
+                    <div class="stat-value">234</div>
+                    <div class="stat-change positive">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                            <polyline points="17 6 23 6 23 12"></polyline>
+                        </svg>
+                        +12 new this month
+                    </div>
+                </div>
+
+                <div class="analytics-stat-card warning">
+                    <div class="stat-icon warning">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                        </svg>
+                    </div>
+                    <div class="stat-label">Avg Order Value</div>
+                    <div class="stat-value">৳674</div>
+                    <div class="stat-change positive">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                            <polyline points="17 6 23 6 23 12"></polyline>
+                        </svg>
+                        +8.4% vs last month
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sales Analytics -->
+            <div class="section-header">
+                <h2>Sales Analytics</h2>
+                <button class="action-btn">View Details</button>
+            </div>
+
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3>Revenue Trend</h3>
+                    <div class="chart-period">
+                        <button class="period-btn">Week</button>
+                        <button class="period-btn active">Month</button>
+                        <button class="period-btn">Year</button>
+                    </div>
+                </div>
+                <div class="bar-chart">
+                    <div class="bar-item">
+                        <div class="bar" style="height: 45%;">
+                            <span class="bar-value">৳0.9M</span>
+                        </div>
+                        <span class="bar-label">Week 1</span>
+                    </div>
+                    <div class="bar-item">
+                        <div class="bar" style="height: 65%;">
+                            <span class="bar-value">ৱ1.3M</span>
+                        </div>
+                        <span class="bar-label">Week 2</span>
+                    </div>
+                    <div class="bar-item">
+                        <div class="bar" style="height: 85%;">
+                            <span class="bar-value">৳1.7M</span>
+                        </div>
+                        <span class="bar-label">Week 3</span>
+                    </div>
+                    <div class="bar-item">
+                        <div class="bar" style="height: 100%;">
+                            <span class="bar-value">৳2.1M</span>
+                        </div>
+                        <span class="bar-label">Week 4</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Product Performance -->
+            <div class="section-header">
+                <h2>Top Products</h2>
+                <button class="action-btn">Full Report</button>
+            </div>
+
+            <div class="product-performance-list">
+                <div class="product-performance-item">
+                    <div class="product-rank gold">1</div>
+                    <div class="product-info">
+                        <h4>Lux Soap Bar - 125g</h4>
+                        <p>Beauty & Personal Care</p>
+                    </div>
+                    <div class="product-metrics">
+                        <strong>২,847</strong>
+                        <span>units sold</span>
+                    </div>
+                </div>
+
+                <div class="product-performance-item">
+                    <div class="product-rank silver">2</div>
+                    <div class="product-info">
+                        <h4>Lifebuoy Hand Wash - 500ml</h4>
+                        <p>Health & Hygiene</p>
+                    </div>
+                    <div class="product-metrics">
+                        <strong>২,634</strong>
+                        <span>units sold</span>
+                    </div>
+                </div>
+
+                <div class="product-performance-item">
+                    <div class="product-rank bronze">3</div>
+                    <div class="product-info">
+                        <h4>Surf Excel Detergent - 1kg</h4>
+                        <p>Home Care</p>
+                    </div>
+                    <div class="product-metrics">
+                        <strong>২,421</strong>
+                        <span>units sold</span>
+                    </div>
+                </div>
+
+                <div class="product-performance-item">
+                    <div class="product-rank default">4</div>
+                    <div class="product-info">
+                        <h4>Close-Up Toothpaste - 150g</h4>
+                        <p>Oral Care</p>
+                    </div>
+                    <div class="product-metrics">
+                        <strong>২,198</strong>
+                        <span>units sold</span>
+                    </div>
+                </div>
+
+                <div class="product-performance-item">
+                    <div class="product-rank default">5</div>
+                    <div class="product-info">
+                        <h4>Rin Detergent Bar - 250g</h4>
+                        <p>Home Care</p>
+                    </div>
+                    <div class="product-metrics">
+                        <strong>১,956</strong>
+                        <span>units sold</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Retailer Performance -->
+            <div class="section-header">
+                <h2>Top Retailers</h2>
+                <button class="action-btn">View All</button>
+            </div>
+
+            <div class="retailer-performance-grid">
+                <div class="retailer-performance-card top-performer">
+                    <div class="retailer-header">
+                        <div class="retailer-avatar">MB</div>
+                        <div class="retailer-header-info">
+                            <h4>Metro Bazaar</h4>
+                            <p>Khilgaon, Dhaka</p>
+                        </div>
+                        <div class="performance-badge top">Top</div>
+                    </div>
+                    <div class="retailer-metrics">
+                        <div class="retailer-metric">
+                            <span class="retailer-metric-value">৳842K</span>
+                            <span class="retailer-metric-label">Revenue</span>
+                        </div>
+                        <div class="retailer-metric">
+                            <span class="retailer-metric-value">142</span>
+                            <span class="retailer-metric-label">Orders</span>
+                        </div>
+                        <div class="retailer-metric">
+                            <span class="retailer-metric-value">98%</span>
+                            <span class="retailer-metric-label">On-Time</span>
+                        </div>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-label">
+                            <span>Growth Target</span>
+                            <span>94%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill success" style="width: 94%;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="retailer-performance-card">
+                    <div class="retailer-header">
+                        <div class="retailer-avatar">RM</div>
+                        <div class="retailer-header-info">
+                            <h4>Rahman's Mega Store</h4>
+                            <p>Mirpur-11, Dhaka</p>
+                        </div>
+                        <div class="performance-badge good">Good</div>
+                    </div>
+                    <div class="retailer-metrics">
+                        <div class="retailer-metric">
+                            <span class="retailer-metric-value">৳724K</span>
+                            <span class="retailer-metric-label">Revenue</span>
+                        </div>
+                        <div class="retailer-metric">
+                            <span class="retailer-metric-value">128</span>
+                            <span class="retailer-metric-label">Orders</span>
+                        </div>
+                        <div class="retailer-metric">
+                            <span class="retailer-metric-value">95%</span>
+                            <span class="retailer-metric-label">On-Time</span>
+                        </div>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-label">
+                            <span>Growth Target</span>
+                            <span>87%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 87%;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="retailer-performance-card">
+                    <div class="retailer-header">
+                        <div class="retailer-avatar">SM</div>
+                        <div class="retailer-header-info">
+                            <h4>Smart Mart Express</h4>
+                            <p>Mohammadpur, Dhaka</p>
+                        </div>
+                        <div class="performance-badge good">Good</div>
+                    </div>
+                    <div class="retailer-metrics">
+                        <div class="retailer-metric">
+                            <span class="retailer-metric-value">৳698K</span>
+                            <span class="retailer-metric-label">Revenue</span>
+                        </div>
+                        <div class="retailer-metric">
+                            <span class="retailer-metric-value">118</span>
+                            <span class="retailer-metric-label">Orders</span>
+                        </div>
+                        <div class="retailer-metric">
+                            <span class="retailer-metric-value">92%</span>
+                            <span class="retailer-metric-label">On-Time</span>
+                        </div>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-label">
+                            <span>Growth Target</span>
+                            <span>81%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill warning" style="width: 81%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Market Trends -->
+            <div class="section-header">
+                <h2>Market Trends</h2>
+                <button class="action-btn">More Insights</button>
+            </div>
+
+            <div class="trend-card">
+                <div class="trend-header">
+                    <h4>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                        </svg>
+                        Personal Care Products
+                    </h4>
+                    <div class="trend-indicator up">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                            <polyline points="17 6 23 6 23 12"></polyline>
+                        </svg>
+                        +32%
+                    </div>
+                </div>
+                <p class="trend-description">
+                    Strong demand for beauty and hygiene products due to increased health awareness. Soap and hand wash sales surging in urban areas.
+                </p>
+                <div class="trend-stats">
+                    <div class="trend-stat">
+                        <div class="trend-stat-label">Market Share</div>
+                        <div class="trend-stat-value">42%</div>
+                    </div>
+                    <div class="trend-stat">
+                        <div class="trend-stat-label">Growth Rate</div>
+                        <div class="trend-stat-value">+32%</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="trend-card">
+                <div class="trend-header">
+                    <h4>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        </svg>
+                        Home Care Category
+                    </h4>
+                    <div class="trend-indicator up">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                            <polyline points="17 6 23 6 23 12"></polyline>
+                        </svg>
+                        +18%
+                    </div>
+                </div>
+                <p class="trend-description">
+                    Steady growth in detergent and cleaning products. Premium segment showing faster adoption in metro cities.
+                </p>
+                <div class="trend-stats">
+                    <div class="trend-stat">
+                        <div class="trend-stat-label">Market Share</div>
+                        <div class="trend-stat-value">38%</div>
+                    </div>
+                    <div class="trend-stat">
+                        <div class="trend-stat-label">Growth Rate</div>
+                        <div class="trend-stat-value">+18%</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="trend-card">
+                <div class="trend-header">
+                    <h4>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                        </svg>
+                        Health & Wellness
+                    </h4>
+                    <div class="trend-indicator up">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                            <polyline points="17 6 23 6 23 12"></polyline>
+                        </svg>
+                        +45%
+                    </div>
+                </div>
+                <p class="trend-description">
+                    Explosive growth in health-focused products. Consumers prioritizing immunity and wellness products post-pandemic.
+                </p>
+                <div class="trend-stats">
+                    <div class="trend-stat">
+                        <div class="trend-stat-label">Market Share</div>
+                        <div class="trend-stat-value">28%</div>
+                    </div>
+                    <div class="trend-stat">
+                        <div class="trend-stat-label">Growth Rate</div>
+                        <div class="trend-stat-value">+45%</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Demand Forecasting -->
+            <div class="section-header">
+                <h2>AI Demand Forecast</h2>
+                <button class="action-btn">Configure</button>
+            </div>
+
+            <div class="forecast-card">
+                <div class="forecast-header">
+                    <h3>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                            <path d="M2 17l10 5 10-5"></path>
+                            <path d="M2 12l10 5 10-5"></path>
+                        </svg>
+                        Next Month Prediction
+                    </h3>
+                    <span class="ai-badge-forecast">AI Powered</span>
+                </div>
+
+                <p class="forecast-period">Forecast for December 2025 based on historical data, seasonality, and market trends</p>
+
+                <div class="forecast-grid">
+                    <div class="forecast-item">
+                        <div class="forecast-item-label">Revenue</div>
+                        <div class="forecast-item-value">৳10.2M</div>
+                        <div class="forecast-item-change">+21% increase</div>
+                    </div>
+                    <div class="forecast-item">
+                        <div class="forecast-item-label">Orders</div>
+                        <div class="forecast-item-value">1,847</div>
+                        <div class="forecast-item-change">+16% increase</div>
+                    </div>
+                    <div class="forecast-item">
+                        <div class="forecast-item-label">Units</div>
+                        <div class="forecast-item-value">14,523</div>
+                        <div class="forecast-item-change">+17% increase</div>
+                    </div>
+                </div>
+
+                <div class="forecast-insights">
+                    <h4>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                        </svg>
+                        Key Insights
+                    </h4>
+                    <ul>
+                        <li><strong>Seasonal Spike:</strong> Winter season expected to boost personal care product sales by 28%</li>
+                        <li><strong>Festival Impact:</strong> Year-end celebrations will drive home care product demand up 35%</li>
+                        <li><strong>Stock Alert:</strong> Increase Lux Soap and Lifebuoy inventory by 40% to meet demand</li>
+                        <li><strong>Regional Focus:</strong> Dhaka metro area predicted to see 24% higher demand than avg</li>
+                        <li><strong>Price Optimization:</strong> 5-8% price adjustment recommended for premium products</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Report Actions -->
+            <div class="section-header">
+                <h2>Export Reports</h2>
+            </div>
+
+            <div class="report-actions">
+                <button class="report-action-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    Download PDF
+                </button>
+                <button class="report-action-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                    Export Excel
+                </button>
+                <button class="report-action-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                        <polyline points="22,6 12,13 2,6"></polyline>
+                    </svg>
+                    Email Report
+                </button>
+                <button class="report-action-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    Schedule
+                </button>
+            </div>
+
+        </main>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav">
+            <button class="nav-item" onclick="window.location.href='supplier-dashboard.html'">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                </svg>
+                <span class="nav-label">Home</span>
+            </button>
+            <button class="nav-item" onclick="window.location.href='supplier-orders.html'">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 11l3 3L22 4"></path>
+                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                </svg>
+                <span class="nav-label">Orders</span>
+            </button>
+            <button class="nav-item active">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                </svg>
+                <span class="nav-label">Analytics</span>
+            </button>
+            <button class="nav-item" onclick="window.location.href='profile.html'">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                <span class="nav-label">Profile</span>
+            </button>
+        </nav>
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('show');
+            overlay.classList.toggle('show');
+        }
+
+        function showNotifications() {
+            alert('Notifications:\n• Revenue target achieved!\n• New trend report available');
+        }
+
+        function openProfile() {
+            window.location.href = 'profile.html';
+        }
+
+        // Period button interactions
+        document.querySelectorAll('.period-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orders - ChainSync AI</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="navigationContainer"></div>
+
+    <div class="container with-nav">
+        <div class="page-header">
+            <h1 class="page-title">Orders</h1>
+            <div class="header-stats">
+                <div class="stat-mini">
+                    <span class="stat-label">Active:</span>
+                    <span class="stat-value">2</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-content with-bottom-nav">
+            <!-- Orders List -->
+            <div id="ordersList"></div>
+        </div>
+    </div>
+
+    <!-- Order Detail Modal -->
+    <div id="orderModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle"></h2>
+                <button class="modal-close" onclick="closeOrderModal()">×</button>
+            </div>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <script src="navigation.js"></script>
+    <script src="ai-data.js"></script>
+    <script>
+        document.getElementById('navigationContainer').innerHTML = generateMobileNav('manufacturer');
+
+        function renderOrders() {
+            const orders = aiData.manufacturer.orders;
+            const html = orders.map(order => `
+                <div class="order-card" onclick="showOrderDetail('${order.id}')">
+                    <div class="order-header">
+                        <div class="order-id">#${order.id}</div>
+                        <div class="order-status ${order.status.toLowerCase().replace(' ', '-')}">
+                            ${order.status}
+                        </div>
+                    </div>
+                    <div class="order-buyer">
+                        <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                        ${order.buyer}
+                    </div>
+                    <div class="order-details-grid">
+                        <div class="detail-item">
+                            <span class="detail-label">Items:</span>
+                            <span class="detail-value">${order.items.length}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Total:</span>
+                            <span class="detail-value">$${order.total.toLocaleString()}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Payment:</span>
+                            <span class="detail-value payment-${order.paymentStatus.toLowerCase()}">${order.paymentStatus}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Delivery:</span>
+                            <span class="detail-value">${order.deliveryDate}</span>
+                        </div>
+                    </div>
+                    ${order.aiSupplierRecommendation ? `
+                        <div class="ai-badge-mini">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                                <path d="M2 17l10 5 10-5"/>
+                                <path d="M2 12l10 5 10-5"/>
+                            </svg>
+                            AI Supplier Recommendation Available
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
+            document.getElementById('ordersList').innerHTML = html;
+        }
+
+        function showOrderDetail(orderId) {
+            const order = aiData.manufacturer.orders.find(o => o.id === orderId);
+            if (!order) return;
+
+            document.getElementById('modalTitle').textContent = `Order #${order.id}`;
+            
+            let itemsHtml = order.items.map(item => `
+                <div class="item-row">
+                    <div class="item-name">${item.name}</div>
+                    <div class="item-details">
+                        <span>${item.quantity} × $${item.unitPrice.toLocaleString()}</span>
+                        <span class="item-total">$${item.subtotal.toLocaleString()}</span>
+                    </div>
+                </div>
+            `).join('');
+
+            let aiRecommendationHtml = '';
+            if (order.aiSupplierRecommendation) {
+                const rec = order.aiSupplierRecommendation;
+                aiRecommendationHtml = `
+                    <div class="ai-section">
+                        <div class="ai-section-header">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                                <path d="M2 17l10 5 10-5"/>
+                                <path d="M2 12l10 5 10-5"/>
+                            </svg>
+                            <span>AI Best Supplier Recommendation</span>
+                            <div class="ai-confidence">${rec.confidence}% confidence</div>
+                        </div>
+                        
+                        <div class="supplier-comparison">
+                            <div class="comparison-card current">
+                                <div class="comparison-label">Current Supplier</div>
+                                <div class="supplier-name">${rec.currentSupplier}</div>
+                                <div class="comparison-details">
+                                    <div class="comparison-row">
+                                        <span>Price:</span>
+                                        <span>$${rec.currentPrice.toLocaleString()}</span>
+                                    </div>
+                                    <div class="comparison-row">
+                                        <span>Delivery:</span>
+                                        <span>${rec.currentDelivery}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="comparison-arrow">
+                                <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                                    <polyline points="9 18 15 12 9 6"/>
+                                </svg>
+                            </div>
+                            
+                            <div class="comparison-card recommended">
+                                <div class="comparison-label recommended">AI Recommended</div>
+                                <div class="supplier-name">${rec.recommendedSupplier}</div>
+                                <div class="comparison-details">
+                                    <div class="comparison-row">
+                                        <span>Price:</span>
+                                        <span class="highlight">$${rec.recommendedPrice.toLocaleString()}</span>
+                                    </div>
+                                    <div class="comparison-row">
+                                        <span>Delivery:</span>
+                                        <span class="highlight">${rec.recommendedDelivery}</span>
+                                    </div>
+                                </div>
+                                <div class="savings-badge">
+                                    Save $${rec.savings.toLocaleString()}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="ai-reason">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <path d="M12 16v-4"/>
+                                <path d="M12 8h.01"/>
+                            </svg>
+                            ${rec.reason}
+                        </div>
+                        
+                        <button class="switch-supplier-btn">
+                            Switch to ${rec.recommendedSupplier}
+                        </button>
+                    </div>
+                `;
+            }
+
+            document.getElementById('modalBody').innerHTML = `
+                <div class="modal-section">
+                    <div class="section-title-mini">Buyer Information</div>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">Company:</span>
+                            <span class="info-value">${order.buyer}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Status:</span>
+                            <span class="info-value status-badge ${order.status.toLowerCase().replace(' ', '-')}">${order.status}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Payment:</span>
+                            <span class="info-value payment-${order.paymentStatus.toLowerCase()}">${order.paymentStatus}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Delivery Date:</span>
+                            <span class="info-value">${order.deliveryDate}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-section">
+                    <div class="section-title-mini">Order Items</div>
+                    <div class="items-list">
+                        ${itemsHtml}
+                    </div>
+                    <div class="order-total">
+                        <span>Total:</span>
+                        <span>$${order.total.toLocaleString()}</span>
+                    </div>
+                </div>
+
+                ${aiRecommendationHtml}
+            `;
+
+            document.getElementById('orderModal').style.display = 'flex';
+        }
+
+        function closeOrderModal() {
+            document.getElementById('orderModal').style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('orderModal');
+            if (event.target === modal) {
+                closeOrderModal();
+            }
+        }
+
+        renderOrders();
+    </script>
+
+    <style>
+        .order-card {
+            background-color: #1a1f3a;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .order-card:active {
+            transform: scale(0.98);
+        }
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .order-id {
+            font-size: 16px;
+            font-weight: 600;
+            color: #ffffff;
+        }
+        .order-status {
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .order-status.in-progress {
+            background: rgba(255, 165, 0, 0.2);
+            color: #ffa500;
+        }
+        .order-status.pending {
+            background: rgba(0, 212, 255, 0.2);
+            color: #00d4ff;
+        }
+        .order-buyer {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #ffffff;
+            margin-bottom: 12px;
+        }
+        .order-buyer svg {
+            width: 16px;
+            height: 16px;
+            stroke: #9ca3af;
+        }
+        .order-details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .detail-label {
+            font-size: 11px;
+            color: #9ca3af;
+        }
+        .detail-value {
+            font-size: 13px;
+            font-weight: 600;
+            color: #ffffff;
+        }
+        .detail-value.payment-paid {
+            color: #00ff88;
+        }
+        .detail-value.payment-pending {
+            color: #ffa500;
+        }
+        .ai-badge-mini {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px;
+            background: rgba(0, 212, 255, 0.1);
+            border-radius: 6px;
+            font-size: 11px;
+            color: #00d4ff;
+        }
+        .ai-badge-mini svg {
+            width: 14px;
+            height: 14px;
+            stroke: currentColor;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background: #0a0e27;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 390px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            border-bottom: 1px solid #1a1f3a;
+            position: sticky;
+            top: 0;
+            background: #0a0e27;
+            z-index: 1;
+        }
+        .modal-header h2 {
+            font-size: 18px;
+            color: #ffffff;
+            margin: 0;
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            color: #9ca3af;
+            font-size: 28px;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+        }
+        .modal-section {
+            padding: 16px;
+            border-bottom: 1px solid #1a1f3a;
+        }
+        .section-title-mini {
+            font-size: 13px;
+            font-weight: 600;
+            color: #9ca3af;
+            margin-bottom: 12px;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .info-label {
+            font-size: 11px;
+            color: #9ca3af;
+        }
+        .info-value {
+            font-size: 13px;
+            font-weight: 600;
+            color: #ffffff;
+        }
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            display: inline-block;
+        }
+        .status-badge.in-progress {
+            background: rgba(255, 165, 0, 0.2);
+            color: #ffa500;
+        }
+        .items-list {
+            margin-bottom: 12px;
+        }
+        .item-row {
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .item-row:last-child {
+            border-bottom: none;
+        }
+        .item-name {
+            font-size: 14px;
+            color: #ffffff;
+            margin-bottom: 6px;
+        }
+        .item-details {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #9ca3af;
+        }
+        .item-total {
+            font-weight: 600;
+            color: #00d4ff;
+        }
+        .order-total {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px;
+            background: rgba(0, 212, 255, 0.05);
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #ffffff;
+        }
+        .ai-section {
+            padding: 16px;
+        }
+        .ai-section-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+            color: #00d4ff;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .ai-section-header svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+        }
+        .ai-confidence {
+            margin-left: auto;
+            font-size: 11px;
+        }
+        .supplier-comparison {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .comparison-card {
+            flex: 1;
+            background: #1a1f3a;
+            border-radius: 8px;
+            padding: 12px;
+        }
+        .comparison-card.recommended {
+            border: 2px solid #00d4ff;
+        }
+        .comparison-label {
+            font-size: 10px;
+            color: #9ca3af;
+            margin-bottom: 6px;
+        }
+        .comparison-label.recommended {
+            color: #00d4ff;
+            font-weight: 600;
+        }
+        .supplier-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 10px;
+        }
+        .comparison-details {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .comparison-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #9ca3af;
+        }
+        .comparison-row .highlight {
+            color: #00ff88;
+            font-weight: 600;
+        }
+        .comparison-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .comparison-arrow svg {
+            width: 20px;
+            height: 20px;
+            stroke: #00d4ff;
+        }
+        .savings-badge {
+            margin-top: 8px;
+            padding: 4px 8px;
+            background: rgba(0, 255, 136, 0.2);
+            border-radius: 4px;
+            text-align: center;
+            font-size: 11px;
+            font-weight: 600;
+            color: #00ff88;
+        }
+        .ai-reason {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            padding: 10px;
+            background: rgba(0, 212, 255, 0.05);
+            border-radius: 6px;
+            font-size: 12px;
+            color: #9ca3af;
+            line-height: 1.5;
+            margin-bottom: 16px;
+        }
+        .ai-reason svg {
+            width: 16px;
+            height: 16px;
+            stroke: #00d4ff;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .switch-supplier-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #00d4ff, #0099cc);
+            border: none;
+            border-radius: 6px;
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+    </style>
+</body>
+</html>

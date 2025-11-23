@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoices - ChainSync AI</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="navigationContainer"></div>
+
+    <div class="container with-nav">
+        <div class="page-header">
+            <h1 class="page-title">Invoices</h1>
+            <button class="add-btn" onclick="showGenerateModal()">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                Generate
+            </button>
+        </div>
+
+        <div class="dashboard-content with-bottom-nav">
+            <!-- Payment Summary -->
+            <div class="payment-summary-grid">
+                <div class="summary-card">
+                    <div class="summary-label">Total Outstanding</div>
+                    <div class="summary-value outstanding">$24,500</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-label">Paid This Month</div>
+                    <div class="summary-value paid">$48,000</div>
+                </div>
+            </div>
+
+            <!-- Invoices List -->
+            <div class="section">
+                <div class="section-title">Recent Invoices</div>
+                <div id="invoicesList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Generate Invoice Modal -->
+    <div id="generateModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Generate Invoice</h2>
+                <button class="modal-close" onclick="closeGenerateModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-section">
+                    <label class="input-label">Select Customer</label>
+                    <select class="form-input">
+                        <option>TechCorp Manufacturing</option>
+                        <option>RetailPro Store Network</option>
+                        <option>Global Distributors Ltd</option>
+                    </select>
+                </div>
+
+                <div class="form-section">
+                    <label class="input-label">Order Reference</label>
+                    <input type="text" class="form-input" placeholder="ORD-2024-001">
+                </div>
+
+                <div class="form-section">
+                    <label class="input-label">Product/Service</label>
+                    <input type="text" class="form-input" placeholder="Raw Steel - Grade A">
+                </div>
+
+                <div class="form-section">
+                    <div class="form-row">
+                        <div class="form-col">
+                            <label class="input-label">Quantity</label>
+                            <input type="number" class="form-input" placeholder="1000" value="1000">
+                        </div>
+                        <div class="form-col">
+                            <label class="input-label">Unit Price</label>
+                            <input type="number" class="form-input" placeholder="13.00" value="13.00" step="0.01">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <label class="input-label">Due Date</label>
+                    <input type="date" class="form-input" value="2024-12-31">
+                </div>
+
+                <div class="total-preview">
+                    <span>Total Amount:</span>
+                    <span class="total-amount">$13,000.00</span>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="btn-secondary" onclick="closeGenerateModal()">Cancel</button>
+                    <button class="btn-primary" onclick="generateInvoice()">Generate & Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Invoice Detail Modal -->
+    <div id="detailModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="invoiceTitle"></h2>
+                <button class="modal-close" onclick="closeDetailModal()">×</button>
+            </div>
+            <div id="invoiceDetail" class="modal-body"></div>
+        </div>
+    </div>
+
+    <script src="navigation.js"></script>
+    <script src="ai-data.js"></script>
+    <script>
+        document.getElementById('navigationContainer').innerHTML = generateMobileNav('supplier');
+
+        const invoices = [
+            {
+                id: 'INV-2024-078',
+                customer: 'TechCorp Manufacturing',
+                date: '2024-11-15',
+                dueDate: '2024-12-15',
+                amount: 13000,
+                status: 'Paid',
+                items: [
+                    { product: 'Raw Steel - Grade A', qty: '1000kg', price: 13, total: 13000 }
+                ]
+            },
+            {
+                id: 'INV-2024-077',
+                customer: 'RetailPro Store Network',
+                date: '2024-11-10',
+                dueDate: '2024-12-10',
+                amount: 8500,
+                status: 'Pending',
+                items: [
+                    { product: 'Aluminum Sheets', qty: '500kg', price: 17, total: 8500 }
+                ]
+            },
+            {
+                id: 'INV-2024-076',
+                customer: 'Global Distributors Ltd',
+                date: '2024-11-05',
+                dueDate: '2024-11-20',
+                amount: 3000,
+                status: 'Overdue',
+                items: [
+                    { product: 'Copper Wire', qty: '200kg', price: 15, total: 3000 }
+                ]
+            },
+            {
+                id: 'INV-2024-075',
+                customer: 'TechCorp Manufacturing',
+                date: '2024-10-28',
+                dueDate: '2024-11-28',
+                amount: 22000,
+                status: 'Paid',
+                items: [
+                    { product: 'Raw Steel - Grade A', qty: '1500kg', price: 13, total: 19500 },
+                    { product: 'Delivery Fee', qty: '1', price: 2500, total: 2500 }
+                ]
+            }
+        ];
+
+        function renderInvoices() {
+            const html = invoices.map(invoice => `
+                <div class="invoice-card" onclick="showInvoiceDetail('${invoice.id}')">
+                    <div class="invoice-header">
+                        <div class="invoice-id">${invoice.id}</div>
+                        <div class="invoice-status ${invoice.status.toLowerCase()}">
+                            ${invoice.status}
+                        </div>
+                    </div>
+                    
+                    <div class="invoice-customer">
+                        <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                        ${invoice.customer}
+                    </div>
+
+                    <div class="invoice-details">
+                        <div class="detail-row">
+                            <span class="detail-label">Date Issued:</span>
+                            <span class="detail-value">${new Date(invoice.date).toLocaleDateString()}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Due Date:</span>
+                            <span class="detail-value">${new Date(invoice.dueDate).toLocaleDateString()}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Amount:</span>
+                            <span class="detail-value amount">$${invoice.amount.toLocaleString()}</span>
+                        </div>
+                    </div>
+
+                    <div class="invoice-actions">
+                        <button class="action-icon-btn" onclick="event.stopPropagation(); downloadInvoice('${invoice.id}')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                                <polyline points="7 10 12 15 17 10"/>
+                                <line x1="12" y1="15" x2="12" y2="3"/>
+                            </svg>
+                        </button>
+                        <button class="action-icon-btn" onclick="event.stopPropagation(); sendInvoice('${invoice.id}')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                                <line x1="22" y1="2" x2="11" y2="13"/>
+                                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+            document.getElementById('invoicesList').innerHTML = html;
+        }
+
+        function showInvoiceDetail(invoiceId) {
+            const invoice = invoices.find(inv => inv.id === invoiceId);
+            if (!invoice) return;
+
+            document.getElementById('invoiceTitle').textContent = invoice.id;
+
+            const itemsHtml = invoice.items.map(item => `
+                <div class="item-row">
+                    <div class="item-name">${item.product}</div>
+                    <div class="item-calc">
+                        <span>${item.qty} × $${item.price.toLocaleString()}</span>
+                        <span class="item-total">$${item.total.toLocaleString()}</span>
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('invoiceDetail').innerHTML = `
+                <div class="invoice-full-details">
+                    <div class="detail-section">
+                        <div class="detail-section-title">Customer Information</div>
+                        <div class="detail-grid">
+                            <div>
+                                <div class="detail-label">Company Name</div>
+                                <div class="detail-value">${invoice.customer}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="detail-section">
+                        <div class="detail-section-title">Invoice Details</div>
+                        <div class="detail-grid">
+                            <div>
+                                <div class="detail-label">Invoice Number</div>
+                                <div class="detail-value">${invoice.id}</div>
+                            </div>
+                            <div>
+                                <div class="detail-label">Status</div>
+                                <div class="invoice-status ${invoice.status.toLowerCase()}">${invoice.status}</div>
+                            </div>
+                            <div>
+                                <div class="detail-label">Date Issued</div>
+                                <div class="detail-value">${new Date(invoice.date).toLocaleDateString()}</div>
+                            </div>
+                            <div>
+                                <div class="detail-label">Due Date</div>
+                                <div class="detail-value">${new Date(invoice.dueDate).toLocaleDateString()}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="detail-section">
+                        <div class="detail-section-title">Items</div>
+                        <div class="items-container">
+                            ${itemsHtml}
+                        </div>
+                        <div class="invoice-total">
+                            <span>Total Amount:</span>
+                            <span>$${invoice.amount.toLocaleString()}</span>
+                        </div>
+                    </div>
+
+                    <div class="detail-actions">
+                        <button class="btn-secondary" onclick="downloadInvoice('${invoice.id}')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                                <polyline points="7 10 12 15 17 10"/>
+                                <line x1="12" y1="15" x2="12" y2="3"/>
+                            </svg>
+                            Download PDF
+                        </button>
+                        <button class="btn-primary" onclick="sendInvoice('${invoice.id}')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                                <line x1="22" y1="2" x2="11" y2="13"/>
+                                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                            </svg>
+                            Send to Customer
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('detailModal').style.display = 'flex';
+        }
+
+        function showGenerateModal() {
+            document.getElementById('generateModal').style.display = 'flex';
+        }
+
+        function closeGenerateModal() {
+            document.getElementById('generateModal').style.display = 'none';
+        }
+
+        function closeDetailModal() {
+            document.getElementById('detailModal').style.display = 'none';
+        }
+
+        function generateInvoice() {
+            alert('Invoice generated and sent successfully!');
+            closeGenerateModal();
+        }
+
+        function downloadInvoice(id) {
+            alert('Downloading invoice ' + id + ' as PDF...');
+        }
+
+        function sendInvoice(id) {
+            alert('Invoice ' + id + ' sent to customer via email!');
+        }
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        }
+
+        renderInvoices();
+    </script>
+
+    <style>
+        .add-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            background: linear-gradient(135deg, #00d4ff, #0099cc);
+            border: none;
+            border-radius: 6px;
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .add-btn svg {
+            width: 16px;
+            height: 16px;
+            stroke: currentColor;
+        }
+        .payment-summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .summary-card {
+            background: #1a1f3a;
+            border-radius: 10px;
+            padding: 14px;
+        }
+        .summary-label {
+            font-size: 11px;
+            color: #9ca3af;
+            margin-bottom: 6px;
+        }
+        .summary-value {
+            font-size: 20px;
+            font-weight: 700;
+        }
+        .summary-value.outstanding {
+            color: #ffa500;
+        }
+        .summary-value.paid {
+            color: #00ff88;
+        }
+        .invoice-card {
+            background: #1a1f3a;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .invoice-card:active {
+            transform: scale(0.98);
+        }
+        .invoice-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .invoice-id {
+            font-size: 15px;
+            font-weight: 600;
+            color: #ffffff;
+        }
+        .invoice-status {
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .invoice-status.paid {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+        }
+        .invoice-status.pending {
+            background: rgba(255, 165, 0, 0.2);
+            color: #ffa500;
+        }
+        .invoice-status.overdue {
+            background: rgba(255, 68, 68, 0.2);
+            color: #ff4444;
+        }
+        .invoice-customer {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #ffffff;
+            margin-bottom: 12px;
+        }
+        .invoice-customer svg {
+            width: 16px;
+            height: 16px;
+            stroke: #9ca3af;
+        }
+        .invoice-details {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 12px;
+        }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            font-size: 12px;
+        }
+        .detail-label {
+            color: #9ca3af;
+        }
+        .detail-value {
+            color: #ffffff;
+            font-weight: 500;
+        }
+        .detail-value.amount {
+            color: #00d4ff;
+            font-weight: 600;
+        }
+        .invoice-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+        .action-icon-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            background: rgba(255, 255, 255, 0.05);
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .action-icon-btn svg {
+            width: 18px;
+            height: 18px;
+            stroke: #00d4ff;
+        }
+        .modal-body {
+            padding: 0 16px 16px;
+        }
+        .form-section {
+            margin-bottom: 14px;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .form-col {
+            display: flex;
+            flex-direction: column;
+        }
+        .input-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 500;
+            color: #9ca3af;
+            margin-bottom: 6px;
+        }
+        .form-input {
+            width: 100%;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            color: #ffffff;
+            font-size: 13px;
+        }
+        .total-preview {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px;
+            background: rgba(0, 212, 255, 0.1);
+            border-radius: 6px;
+            margin-bottom: 16px;
+            font-size: 15px;
+            font-weight: 600;
+            color: #ffffff;
+        }
+        .total-amount {
+            color: #00d4ff;
+        }
+        .modal-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .btn-secondary {
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .btn-secondary svg {
+            width: 16px;
+            height: 16px;
+            stroke: currentColor;
+        }
+        .btn-primary {
+            padding: 10px;
+            background: linear-gradient(135deg, #00d4ff, #0099cc);
+            border: none;
+            border-radius: 6px;
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .btn-primary svg {
+            width: 16px;
+            height: 16px;
+            stroke: currentColor;
+        }
+        .invoice-full-details {
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+        .detail-section {
+            margin-bottom: 16px;
+        }
+        .detail-section-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #9ca3af;
+            margin-bottom: 10px;
+        }
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .items-container {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .item-row {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .item-row:last-child {
+            border-bottom: none;
+        }
+        .item-name {
+            font-size: 13px;
+            color: #ffffff;
+            margin-bottom: 4px;
+        }
+        .item-calc {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #9ca3af;
+        }
+        .item-total {
+            font-weight: 600;
+            color: #00d4ff;
+        }
+        .invoice-total {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            background: rgba(0, 212, 255, 0.1);
+            border-radius: 6px;
+            font-size: 15px;
+            font-weight: 600;
+            color: #ffffff;
+        }
+        .detail-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 16px;
+        }
+    </style>
+</body>
+</html>
