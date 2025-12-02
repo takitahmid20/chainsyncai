@@ -22,7 +22,7 @@ class DemandForecastView(APIView):
     """
     POST /api/ai/demand-forecast/
     
-    Generate AI-powered demand forecast for a product using Google Gemini.
+    Generate AI-powered demand forecast for a product using xAI Grok.
     
     Analyzes historical sales data, current inventory, and market trends
     to predict future demand and provide actionable recommendations.
@@ -78,7 +78,7 @@ class DemandForecastView(APIView):
         },
         tags=['AI Engine'],
         summary='Generate demand forecast using AI',
-        description='Uses Google Gemini AI to analyze sales history and predict future demand'
+        description='Uses xAI Grok to analyze sales history and predict future demand'
     )
     def post(self, request):
         """Generate demand forecast for a product"""

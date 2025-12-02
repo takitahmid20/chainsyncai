@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     'analytics',
     'media',
     'common',
+    'sales',  # Daily sales tracking
 ]
 
 MIDDLEWARE = [

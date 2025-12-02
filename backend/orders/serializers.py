@@ -18,12 +18,53 @@ class OrderItemSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'product_name', 'product_price', 'subtotal']
 
 
+class OrderListSerializer(serializers.ModelSerializer):
+    """Lightweight serializer for order lists without nested data"""
+    retailer_name = serializers.SerializerMethodField()
+    supplier_name = serializers.SerializerMethodField()
+    
+    def get_retailer_name(self, obj):
+        """Safely get retailer name"""
+        try:
+            return obj.retailer.retailer_profile.shop_name
+        except:
+            return obj.retailer.email
+    
+    def get_supplier_name(self, obj):
+        """Safely get supplier name"""
+        try:
+            return obj.supplier.supplier_profile.business_name
+        except:
+            return obj.supplier.email
+    
+    class Meta:
+        model = Order
+        fields = [
+            'id', 'order_number', 'retailer_name', 'supplier_name', 'status',
+            'total_amount', 'created_at', 'total_items', 'total_quantity'
+        ]
+
+
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)
-    retailer_name = serializers.CharField(source='retailer.retailer_profile.shop_name', read_only=True)
-    supplier_name = serializers.CharField(source='supplier.supplier_profile.business_name', read_only=True)
+    retailer_name = serializers.SerializerMethodField()
+    supplier_name = serializers.SerializerMethodField()
     total_items = serializers.IntegerField(read_only=True)
     total_quantity = serializers.IntegerField(read_only=True)
+    
+    def get_retailer_name(self, obj):
+        """Safely get retailer name"""
+        try:
+            return obj.retailer.retailer_profile.shop_name
+        except:
+            return obj.retailer.email
+    
+    def get_supplier_name(self, obj):
+        """Safely get supplier name"""
+        try:
+            return obj.supplier.supplier_profile.business_name
+        except:
+            return obj.supplier.email
     
     class Meta:
         model = Order

@@ -1,32 +1,38 @@
 """
 AI Engine Services
-Google Gemini integration for demand forecasting, auto-order suggestions, and AI insights
+Groq AI integration for demand forecasting, auto-order suggestions, and AI insights
 """
 
 import json
+import requests
 from typing import Dict, List, Any, Optional
 from datetime import datetime, timedelta
 from django.utils import timezone
 from decouple import config
-from google import genai
 
 from orders.models import Order, OrderItem
 from products.models import Product
 
 
-class GeminiAIService:
+class GrokAIService:
     """
-    Service class for Google Gemini AI integration
+    Service class for Groq AI API integration
     Handles demand forecasting, auto-order suggestions, and AI insights
     """
     
     def __init__(self):
-        """Initialize Gemini AI with API key"""
-        api_key = config('GEMINI_API_KEY', default='')
+        """Initialize Groq AI with API key"""
+        api_key = config('GROK_API_KEY', default='')
         if not api_key:
-            raise ValueError("GEMINI_API_KEY not found in environment variables")
+            raise ValueError("GROK_API_KEY not found in environment variables")
         
-        self.client = genai.Client(api_key=api_key)
+        self.api_key = api_key
+        # Groq API endpoint
+        self.base_url = 'https://api.groq.com/openai/v1'
+        self.headers = {
+            'Authorization': f'Bearer {api_key}',
+            'Content-Type': 'application/json'
+        }
     
     def get_product_sales_history(self, product_id: int, days: int = 90) -> List[Dict[str, Any]]:
         """
@@ -129,13 +135,30 @@ class GeminiAIService:
             forecast_days=forecast_days
         )
         
-        # Get AI response
+        # Get AI response from Grok
         try:
-            response = self.client.models.generate_content(
-                model='gemini-2.5-flash',
-                contents=prompt
+            response = requests.post(
+                f'{self.base_url}/chat/completions',
+                headers=self.headers,
+                json={
+                    'model': 'llama-3.3-70b-versatile',  # Groq's recommended model
+                    'messages': [
+                        {
+                            'role': 'system',
+                            'content': 'You are an expert supply chain and demand forecasting AI assistant. Provide responses in valid JSON format only.'
+                        },
+                        {
+                            'role': 'user',
+                            'content': prompt
+                        }
+                    ],
+                    'temperature': 0.7,
+                    'max_tokens': 2000
+                },
+                timeout=30
             )
-            ai_response = response.text
+            response.raise_for_status()
+            ai_response = response.json()['choices'][0]['message']['content']
             
             # Parse AI response (expecting JSON format)
             forecast_data = self._parse_forecast_response(ai_response)
@@ -150,6 +173,18 @@ class GeminiAIService:
             
             return forecast_data
             
+        except requests.exceptions.HTTPError as e:
+            error_detail = 'Unknown error'
+            try:
+                error_detail = e.response.json()
+            except:
+                error_detail = e.response.text
+            return {
+                'error': f'AI forecasting failed: {str(e)}',
+                'error_detail': error_detail,
+                'product_id': product_id,
+                'product_name': product.name
+            }
         except Exception as e:
             return {
                 'error': f'AI forecasting failed: {str(e)}',
@@ -287,8 +322,8 @@ class DemandForecastService:
         Returns:
             Forecast data dictionary
         """
-        gemini_service = GeminiAIService()
-        return gemini_service.forecast_demand(
+        grok_service = GrokAIService()
+        return grok_service.forecast_demand(
             product_id=product_id,
             forecast_days=forecast_days,
             retailer_id=retailer_id
@@ -351,7 +386,7 @@ class DemandForecastService:
         total_stock_days = 0
         analyzed_count = 0
         
-        gemini_service = GeminiAIService()
+        grok_service = GrokAIService()
         
         # Process products with progress tracking
         total_to_analyze = len(all_products)
@@ -363,7 +398,7 @@ class DemandForecastService:
             
             try:
                 # Get forecast for this product
-                forecast = gemini_service.forecast_demand(
+                forecast = grok_service.forecast_demand(
                     product_id=product.id,
                     forecast_days=forecast_days,
                     retailer_id=retailer_id
@@ -484,8 +519,3 @@ class DemandForecastService:
             'soon_products': soon_products[:5],  # Top 5 soon
             'trending_up_products': trending_up_products[:5]  # Top 5 trending
         }
-        return gemini_service.forecast_demand(
-            product_id=product_id,
-            forecast_days=forecast_days,
-            retailer_id=retailer_id
-        )

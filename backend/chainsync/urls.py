@@ -48,6 +48,7 @@ urlpatterns = [
     path('api/notifications/', include('notifications.urls')),
     path('api/analytics/', include('analytics.urls')),
     path('api/media/', include('media.urls')),
+    path('api/sales/', include('sales.urls')),  # Daily sales tracking
 ]
 
 # Serve media files in development

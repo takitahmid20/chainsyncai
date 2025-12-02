@@ -7,7 +7,8 @@ from django.utils import timezone
 from .models import Order, OrderItem, Cart, CartItem
 from products.models import Product
 from .serializers import (
-    OrderSerializer, 
+    OrderSerializer,
+    OrderListSerializer,
     OrderCreateSerializer,
     CartSerializer,
     CartItemSerializer
@@ -152,7 +153,14 @@ class OrderListCreateView(APIView):
         if status_filter:
             orders = orders.filter(status=status_filter)
         
-        serializer = OrderSerializer(orders, many=True)
+        # Optimize queries with select_related
+        orders = orders.select_related(
+            'retailer__retailer_profile',
+            'supplier__supplier_profile'
+        )
+        
+        # Use lightweight serializer for list view
+        serializer = OrderListSerializer(orders, many=True)
         return Response(serializer.data)
     
     @transaction.atomic

@@ -10,5 +10,6 @@ urlpatterns = [
     path('insights/', AIInsightsView.as_view(), name='ai-insights'),
     
     # Demand Forecasting - Single product analysis
-    path('demand-forecast/', DemandForecastView.as_view(), name='demand-forecast'),
+    path('forecast/', DemandForecastView.as_view(), name='demand-forecast'),
+    path('demand-forecast/', DemandForecastView.as_view(), name='demand-forecast-alt'),  # Legacy support
 ]
