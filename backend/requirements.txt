@@ -1,0 +1,32 @@
+Django==5.2.8
+djangorestframework==3.16.1
+djangorestframework-simplejwt==5.5.1
+django-cors-headers==4.9.0
+django-filter==24.3
+drf-spectacular==0.29.0
+python-decouple==3.8
+Pillow==12.0.0
+psycopg2-binary==2.9.11
+dj-database-url==3.0.1
+mailjet-rest==1.5.1
+
+# AI & ML
+openai==1.59.5
+langchain==0.3.14
+langchain-openai==0.3.0
+faiss-cpu==1.9.0.post1
+# Use a NumPy <2 to satisfy `langchain==0.3.14` dependency constraints
+# and remain compatible with other native extensions (faiss).
+numpy==1.26.4
+
+# Google Gemini AI
+google-genai
+
+# Image processing
+cloudinary==1.41.0
+
+# Production web server
+gunicorn==21.2.0
+
+# Cloudinary storage integration
+django-cloudinary-storage==0.3.0
