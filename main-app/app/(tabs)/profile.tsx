@@ -135,7 +135,7 @@ export default function ProfileScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Account</Text>
             
-            <TouchableOpacity style={styles.menuItem}>
+            <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/(tabs)/edit-profile')}>
               <View style={styles.menuIconContainer}>
                 <Ionicons name="person-outline" size={20} color={Colors.primary.main} />
               </View>

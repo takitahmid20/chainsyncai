@@ -76,6 +76,7 @@ class ProductListSerializer(serializers.ModelSerializer):
     """Simplified serializer for product listings"""
     category_name = serializers.CharField(source='category.name', read_only=True)
     supplier_name = serializers.CharField(source='supplier.supplier_profile.business_name', read_only=True)
+    supplier = serializers.IntegerField(source='supplier.id', read_only=True)
     primary_image = serializers.SerializerMethodField()
     discount_percentage = serializers.IntegerField(read_only=True)
     
@@ -84,8 +85,8 @@ class ProductListSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'name', 'slug', 'category_name', 'price', 
             'discount_price', 'discount_percentage', 'unit', 
-            'stock_quantity', 'status', 'supplier_name', 
-            'primary_image', 'is_featured'
+            'stock_quantity', 'status', 'supplier', 'supplier_name', 
+            'primary_image', 'is_featured', 'images'
         ]
     
     def get_primary_image(self, obj):

@@ -1,25 +1,56 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { getQuickStats } from '@/services/dashboardService';
 
 interface StatItemProps {
   icon: keyof typeof Ionicons.glyphMap;
   value: string;
   label: string;
+  loading?: boolean;
 }
 
 export default function QuickStatsRow() {
+  const [stats, setStats] = useState({ pendingOrders: 0, todayRevenue: 0 });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  const fetchStats = async () => {
+    try {
+      setLoading(true);
+      const data = await getQuickStats();
+      setStats(data);
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <View style={styles.container}>
-      <StatItem icon="cube-outline" value="12" label="Pending Orders" />
+      <StatItem 
+        icon="cube-outline" 
+        value={loading ? '-' : stats.pendingOrders.toString()} 
+        label="Pending Orders"
+        loading={loading}
+      />
       <View style={styles.divider} />
-      <StatItem icon="cash-outline" value="৳4,200" label="Today's Profit" />
+      <StatItem 
+        icon="cash-outline" 
+        value={loading ? '-' : `৳${stats.todayRevenue.toFixed(0)}`} 
+        label="Today's Revenue"
+        loading={loading}
+      />
     </View>
   );
 }
 
-function StatItem({ icon, value, label }: StatItemProps) {
+function StatItem({ icon, value, label, loading }: StatItemProps) {
   return (
     <View style={styles.statItem}>
       <View style={styles.iconContainer}>
@@ -31,7 +62,11 @@ function StatItem({ icon, value, label }: StatItemProps) {
         </LinearGradient>
       </View>
       <View style={styles.statInfo}>
-        <Text style={styles.statValue}>{value}</Text>
+        {loading ? (
+          <ActivityIndicator size="small" color="#6366f1" />
+        ) : (
+          <Text style={styles.statValue}>{value}</Text>
+        )}
         <Text style={styles.statLabel}>{label}</Text>
       </View>
     </View>

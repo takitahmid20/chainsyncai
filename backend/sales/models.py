@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.utils import timezone
 from products.models import Product
 
 
@@ -20,7 +21,7 @@ class DailySale(models.Model):
     quantity_sold = models.IntegerField()
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
-    sale_date = models.DateField(auto_now_add=True)
+    sale_date = models.DateField(default=timezone.now)
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:

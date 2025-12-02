@@ -4,7 +4,7 @@
  * Based on html2/retailer/ai-insights.html design
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,97 +12,92 @@ import {
   ScrollView,
   TouchableOpacity,
   Dimensions,
+  RefreshControl,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { Spacing, BorderRadius } from '@/constants/Spacing';
+import apiClient, { handleApiError } from '@/services/apiClient';
+import { API_ENDPOINTS } from '@/config/api';
 
 const { width } = Dimensions.get('window');
 
-interface Insight {
-  id: string;
-  title: string;
-  description: string;
-  type: 'positive' | 'warning' | 'neutral';
-  confidence: number;
+interface Recommendation {
+  product_id: number;
+  product_name: string;
+  category: string;
+  current_stock: number;
+  predicted_demand: number;
+  suggested_reorder_quantity: number;
+  suggested_reorder_date: string;
+  confidence_score: number;
+  priority: 'urgent' | 'high' | 'medium' | 'low';
+  reason: string;
+  supplier_name?: string;
+  unit_price?: number;
+  estimated_cost?: number;
 }
 
-interface CategoryPerformance {
-  id: string;
-  name: string;
-  icon: string;
-  revenue: number;
-  percentage: number;
-  color: string;
+interface AIInsightsData {
+  summary: {
+    total_products: number;
+    urgent_reorders: number;
+    high_priority: number;
+    estimated_restock_cost: number;
+    forecast_accuracy: number;
+    last_updated: string;
+  };
+  recommendations: Recommendation[];
+  message?: string;
 }
-
-const mockInsights: Insight[] = [
-  {
-    id: '1',
-    title: 'Beverage Sales Surge',
-    description: 'Your beverage sales are trending +22% this month',
-    type: 'positive',
-    confidence: 95,
-  },
-  {
-    id: '2',
-    title: 'Stock Alert',
-    description: 'Detergent powder stock may run out in 3 days',
-    type: 'warning',
-    confidence: 88,
-  },
-  {
-    id: '3',
-    title: 'Customer Pattern',
-    description: 'Weekend sales are 35% higher than weekdays',
-    type: 'neutral',
-    confidence: 92,
-  },
-];
-
-const categoryPerformance: CategoryPerformance[] = [
-  { id: '1', name: 'Beverages', icon: '🥤', revenue: 45280, percentage: 85, color: '#6366f1' },
-  { id: '2', name: 'Snacks', icon: '🍪', revenue: 38920, percentage: 72, color: '#22c55e' },
-  { id: '3', name: 'Rice & Grains', icon: '🍚', revenue: 32150, percentage: 60, color: '#fb923c' },
-  { id: '4', name: 'Personal Care', icon: '🧴', revenue: 28640, percentage: 54, color: '#a855f7' },
-];
-
-const recommendations = [
-  {
-    id: '1',
-    title: 'Restock Detergent',
-    description: 'Based on sales velocity, restock within 3 days',
-    priority: 'high',
-    action: 'Order Now',
-  },
-  {
-    id: '2',
-    title: 'Promote Snacks',
-    description: 'Weekend demand expected to spike by 40%',
-    priority: 'medium',
-    action: 'View Details',
-  },
-  {
-    id: '3',
-    title: 'Price Optimization',
-    description: 'Beverage prices can be adjusted for better margins',
-    priority: 'low',
-    action: 'Review',
-  },
-];
 
 export default function AIScreen() {
-  const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | 'year'>('week');
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [insightsData, setInsightsData] = useState<AIInsightsData | null>(null);
+  const [selectedPriority, setSelectedPriority] = useState<'all' | 'urgent' | 'high' | 'medium'>('all');
 
-  const getInsightTypeStyle = (type: string) => {
-    switch (type) {
-      case 'positive':
-        return { bg: '#D1FAE5', text: '#065F46', icon: 'trending-up' };
-      case 'warning':
+  useEffect(() => {
+    fetchAIInsights();
+  }, []);
+
+  const fetchAIInsights = async () => {
+    try {
+      setLoading(true);
+      const response = await apiClient.post(API_ENDPOINTS.AI.INSIGHTS, {
+        forecast_days: 30,
+        priority_filter: selectedPriority,
+        max_products: 20,
+      });
+      
+      setInsightsData(response.data);
+    } catch (error) {
+      console.error('Failed to fetch AI insights:', error);
+      Alert.alert('Error', handleApiError(error));
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchAIInsights();
+  }, [selectedPriority]);
+
+  const getInsightTypeStyle = (priority: string) => {
+    switch (priority) {
+      case 'urgent':
+        return { bg: '#FEE2E2', text: '#991B1B', icon: 'alert-circle' };
+      case 'high':
         return { bg: '#FEF3C7', text: '#92400E', icon: 'warning' };
-      case 'neutral':
+      case 'medium':
         return { bg: '#DBEAFE', text: '#1E40AF', icon: 'information-circle' };
+      case 'low':
+        return { bg: '#D1FAE5', text: '#065F46', icon: 'checkmark-circle' };
       default:
         return { bg: Colors.neutral[100], text: Colors.neutral[600], icon: 'information-circle' };
     }
@@ -110,19 +105,66 @@ export default function AIScreen() {
 
   const getPriorityStyle = (priority: string) => {
     switch (priority) {
-      case 'high':
+      case 'urgent':
         return { bg: '#FEE2E2', text: '#991B1B' };
-      case 'medium':
+      case 'high':
         return { bg: '#FEF3C7', text: '#92400E' };
-      case 'low':
+      case 'medium':
         return { bg: '#DBEAFE', text: '#1E40AF' };
+      case 'low':
+        return { bg: '#D1FAE5', text: '#065F46' };
       default:
         return { bg: Colors.neutral[100], text: Colors.neutral[600] };
     }
   };
 
+  const getCategoryIcon = (category: string): string => {
+    if (!category) return '📦';
+    const categoryLower = category.toLowerCase();
+    if (categoryLower.includes('beverage') || categoryLower.includes('drink')) return '🥤';
+    if (categoryLower.includes('snack') || categoryLower.includes('biscuit')) return '🍪';
+    if (categoryLower.includes('rice') || categoryLower.includes('grain')) return '🍚';
+    if (categoryLower.includes('personal') || categoryLower.includes('care')) return '🧴';
+    if (categoryLower.includes('dairy') || categoryLower.includes('milk')) return '🥛';
+    if (categoryLower.includes('oil')) return '🛢️';
+    return '📦';
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color={Colors.primary.main} />
+          <Text style={styles.loadingText}>Analyzing your inventory...</Text>
+        </View>
+      </View>
+    );
+  }
+
+  if (!insightsData) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.centerContainer}>
+          <Ionicons name="alert-circle-outline" size={64} color={Colors.neutral[400]} />
+          <Text style={styles.emptyTitle}>No Insights Available</Text>
+          <Text style={styles.emptyMessage}>Unable to load AI insights at this time.</Text>
+          <TouchableOpacity style={styles.primaryButton} onPress={fetchAIInsights}>
+            <Text style={styles.primaryButtonText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  const topRecommendations = insightsData.recommendations.slice(0, 3);
+  const urgentRecommendations = insightsData.recommendations.filter(r => r.priority === 'urgent' || r.priority === 'high');
+
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView 
+      style={styles.container} 
+      showsVerticalScrollIndicator={false}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+    >
       {/* Hero Section */}
       <View style={styles.heroSection}>
         <View style={styles.aiBadge}>
@@ -130,37 +172,43 @@ export default function AIScreen() {
           <Text style={styles.aiBadgeText}>AI-Generated Summary</Text>
         </View>
         <Text style={styles.heroTitle}>
-          Your beverage sales are trending{' '}
-          <Text style={styles.highlightStat}>+22%</Text>{' '}
-          this month
+          {insightsData.summary.urgent_reorders > 0 ? (
+            <>
+              <Text style={styles.highlightStat}>{insightsData.summary.urgent_reorders}</Text> urgent reorders needed
+            </>
+          ) : (
+            <>Your inventory is well-stocked</>
+          )}
         </Text>
         <View style={styles.heroMeta}>
           <View style={styles.metaItem}>
-            <Ionicons name="time-outline" size={14} color={Colors.neutral[500]} />
-            <Text style={styles.metaText}>Updated 5 mins ago</Text>
+            <Ionicons name="time-outline" size={14} color="rgba(255, 255, 255, 0.9)" />
+            <Text style={styles.metaText}>
+              {new Date(insightsData.summary.last_updated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </Text>
           </View>
           <View style={styles.metaItem}>
-            <Ionicons name="pulse-outline" size={14} color={Colors.neutral[500]} />
-            <Text style={styles.metaText}>95% confidence</Text>
+            <Ionicons name="pulse-outline" size={14} color="rgba(255, 255, 255, 0.9)" />
+            <Text style={styles.metaText}>{insightsData.summary.forecast_accuracy}% accuracy</Text>
           </View>
         </View>
       </View>
 
       {/* Quick Insights */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Quick Insights</Text>
+        <Text style={styles.sectionTitle}>Top Priority Items</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.insightsScroll}>
-          {mockInsights.map((insight) => {
-            const typeStyle = getInsightTypeStyle(insight.type);
+          {topRecommendations.map((rec) => {
+            const typeStyle = getInsightTypeStyle(rec.priority);
             return (
-              <TouchableOpacity key={insight.id} style={styles.insightCard}>
+              <TouchableOpacity key={rec.product_id} style={styles.insightCard}>
                 <View style={[styles.insightIconContainer, { backgroundColor: typeStyle.bg }]}>
                   <Ionicons name={typeStyle.icon as any} size={24} color={typeStyle.text} />
                 </View>
-                <Text style={styles.insightTitle}>{insight.title}</Text>
-                <Text style={styles.insightDescription}>{insight.description}</Text>
+                <Text style={styles.insightTitle}>{rec.product_name}</Text>
+                <Text style={styles.insightDescription}>{rec.reason}</Text>
                 <View style={styles.confidenceBadge}>
-                  <Text style={styles.confidenceText}>{insight.confidence}% confident</Text>
+                  <Text style={styles.confidenceText}>{rec.confidence_score}% confident</Text>
                 </View>
               </TouchableOpacity>
             );
@@ -168,90 +216,121 @@ export default function AIScreen() {
         </ScrollView>
       </View>
 
-      {/* Product Performance */}
+      {/* Summary Stats */}
       <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Product Performance</Text>
-          <TouchableOpacity style={styles.periodSelector}>
-            <Text style={styles.periodText}>This Week</Text>
-            <Ionicons name="chevron-down" size={16} color={Colors.neutral[600]} />
-          </TouchableOpacity>
-        </View>
-        <View style={styles.performanceCard}>
-          {categoryPerformance.map((category) => (
-            <View key={category.id} style={styles.performanceItem}>
-              <Text style={styles.performanceIcon}>{category.icon}</Text>
-              <View style={styles.performanceDetails}>
-                <View style={styles.performanceHeader}>
-                  <Text style={styles.performanceName}>{category.name}</Text>
-                  <Text style={styles.performancePercent}>{category.percentage}%</Text>
-                </View>
-                <Text style={styles.performanceRevenue}>৳{category.revenue.toLocaleString()}</Text>
-                <View style={styles.performanceBarTrack}>
-                  <View
-                    style={[
-                      styles.performanceBarFill,
-                      { width: `${category.percentage}%`, backgroundColor: category.color }
-                    ]}
-                  />
-                </View>
-              </View>
-            </View>
-          ))}
+        <Text style={styles.sectionTitle}>Inventory Summary</Text>
+        <View style={styles.statsGrid}>
+          <View style={styles.statCard}>
+            <Ionicons name="cube-outline" size={32} color={Colors.primary.main} />
+            <Text style={styles.statValue}>{insightsData.summary.total_products}</Text>
+            <Text style={styles.statLabel}>Total Products</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Ionicons name="alert-circle-outline" size={32} color="#ef4444" />
+            <Text style={styles.statValue}>{insightsData.summary.urgent_reorders}</Text>
+            <Text style={styles.statLabel}>Urgent Reorders</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Ionicons name="warning-outline" size={32} color="#f59e0b" />
+            <Text style={styles.statValue}>{insightsData.summary.high_priority}</Text>
+            <Text style={styles.statLabel}>High Priority</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Ionicons name="cash-outline" size={32} color="#10b981" />
+            <Text style={styles.statValue}>৳{Math.round(insightsData.summary.estimated_restock_cost).toLocaleString()}</Text>
+            <Text style={styles.statLabel}>Restock Cost</Text>
+          </View>
         </View>
       </View>
 
-      {/* Demand Forecast Chart */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <View>
-            <Text style={styles.sectionTitle}>Demand Forecast</Text>
-            <Text style={styles.sectionSubtitle}>Next 7 days prediction</Text>
-          </View>
-          <View style={styles.aiPoweredBadge}>
-            <Ionicons name="sparkles" size={12} color="#8b5cf6" />
-            <Text style={styles.aiPoweredText}>AI Powered</Text>
-          </View>
-        </View>
-        <View style={styles.chartCard}>
-          <View style={styles.chartPlaceholder}>
-            <Ionicons name="analytics-outline" size={48} color={Colors.neutral[300]} />
-            <Text style={styles.chartPlaceholderText}>Forecast chart visualization</Text>
-          </View>
-          <View style={styles.chartLegend}>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: Colors.primary.main }]} />
-              <Text style={styles.legendText}>Actual Sales</Text>
+      {/* Category Breakdown */}
+      {insightsData.recommendations.length > 0 && (
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <View>
+              <Text style={styles.sectionTitle}>Product Categories</Text>
+              <Text style={styles.sectionSubtitle}>Reorder recommendations by category</Text>
             </View>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: '#a855f7', borderStyle: 'dashed' }]} />
-              <Text style={styles.legendText}>AI Forecast</Text>
+            <View style={styles.aiPoweredBadge}>
+              <Ionicons name="sparkles" size={12} color="#8b5cf6" />
+              <Text style={styles.aiPoweredText}>AI Powered</Text>
             </View>
           </View>
+          <View style={styles.performanceCard}>
+            {Array.from(new Set(insightsData.recommendations.map(r => r.category).filter(Boolean))).slice(0, 4).map((category) => {
+              const categoryProducts = insightsData.recommendations.filter(r => r.category === category);
+              const totalCost = categoryProducts.reduce((sum, p) => sum + (p.estimated_cost || 0), 0);
+              const urgentCount = categoryProducts.filter(p => p.priority === 'urgent').length;
+              
+              return (
+                <View key={category} style={styles.performanceItem}>
+                  <Text style={styles.performanceIcon}>{getCategoryIcon(category)}</Text>
+                  <View style={styles.performanceDetails}>
+                    <View style={styles.performanceHeader}>
+                      <Text style={styles.performanceName}>{category}</Text>
+                      <Text style={styles.performancePercent}>{categoryProducts.length} items</Text>
+                    </View>
+                    <Text style={styles.performanceRevenue}>
+                      ৳{totalCost.toLocaleString()} • {urgentCount} urgent
+                    </Text>
+                    <View style={styles.performanceBarTrack}>
+                      <View
+                        style={[
+                          styles.performanceBarFill,
+                          { 
+                            width: `${Math.min((urgentCount / categoryProducts.length) * 100, 100)}%`,
+                            backgroundColor: urgentCount > 0 ? '#ef4444' : '#10b981'
+                          }
+                        ]}
+                      />
+                    </View>
+                  </View>
+                </View>
+              );
+            })}
+          </View>
         </View>
-      </View>
+      )}
 
       {/* AI Recommendations */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>AI Recommendations</Text>
         <View style={styles.recommendationsCard}>
-          {recommendations.map((rec) => {
+          {urgentRecommendations.slice(0, 5).map((rec) => {
             const priorityStyle = getPriorityStyle(rec.priority);
             return (
-              <View key={rec.id} style={styles.recommendationItem}>
+              <View key={rec.product_id} style={styles.recommendationItem}>
                 <View style={styles.recommendationLeft}>
                   <View style={styles.recommendationHeader}>
-                    <Text style={styles.recommendationTitle}>{rec.title}</Text>
+                    <Text style={styles.recommendationTitle}>{rec.product_name}</Text>
                     <View style={[styles.priorityBadge, { backgroundColor: priorityStyle.bg }]}>
                       <Text style={[styles.priorityText, { color: priorityStyle.text }]}>
                         {rec.priority.toUpperCase()}
                       </Text>
                     </View>
                   </View>
-                  <Text style={styles.recommendationDescription}>{rec.description}</Text>
+                  <Text style={styles.recommendationDescription}>
+                    {rec.reason} • Reorder {rec.suggested_reorder_quantity} units
+                  </Text>
+                  {rec.supplier_name && (
+                    <Text style={styles.recommendationSupplier}>
+                      Supplier: {rec.supplier_name}
+                    </Text>
+                  )}
                 </View>
-                <TouchableOpacity style={styles.recommendationAction}>
-                  <Text style={styles.recommendationActionText}>{rec.action}</Text>
+                <TouchableOpacity 
+                  style={styles.recommendationAction}
+                  onPress={() => Alert.alert(
+                    rec.product_name,
+                    `Current Stock: ${rec.current_stock}\n` +
+                    `Predicted Demand: ${rec.predicted_demand}\n` +
+                    `Suggested Order: ${rec.suggested_reorder_quantity} units\n` +
+                    `${rec.unit_price ? `Unit Price: ৳${rec.unit_price}\n` : ''}` +
+                    `${rec.estimated_cost ? `Total Cost: ৳${rec.estimated_cost.toLocaleString()}` : ''}`,
+                    [{ text: 'OK' }]
+                  )}
+                >
+                  <Text style={styles.recommendationActionText}>View Details</Text>
                   <Ionicons name="arrow-forward" size={16} color={Colors.primary.main} />
                 </TouchableOpacity>
               </View>
@@ -270,6 +349,41 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background.default,
+  },
+  centerContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: Spacing.xl,
+  },
+  loadingText: {
+    marginTop: Spacing.md,
+    fontSize: Typography.fontSize.base,
+    color: Colors.neutral[600],
+  },
+  emptyTitle: {
+    fontSize: Typography.fontSize.xl,
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.neutral[800],
+    marginTop: Spacing.lg,
+    marginBottom: Spacing.xs,
+  },
+  emptyMessage: {
+    fontSize: Typography.fontSize.sm,
+    color: Colors.neutral[600],
+    textAlign: 'center',
+    marginBottom: Spacing.lg,
+  },
+  primaryButton: {
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.xl,
+    backgroundColor: Colors.primary.main,
+    borderRadius: BorderRadius.md,
+  },
+  primaryButtonText: {
+    fontSize: Typography.fontSize.sm,
+    fontWeight: Typography.fontWeight.semibold,
+    color: '#ffffff',
   },
 
   // Hero Section
@@ -392,21 +506,33 @@ const styles = StyleSheet.create({
     color: Colors.neutral[700],
   },
 
-  // Period Selector
-  periodSelector: {
+  // Stats Grid
+  statsGrid: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.xs,
+    flexWrap: 'wrap',
+    gap: Spacing.md,
+  },
+  statCard: {
+    flex: 1,
+    minWidth: '45%',
     backgroundColor: Colors.background.paper,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
-    borderRadius: BorderRadius.md,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
+    alignItems: 'center',
     borderWidth: 1,
     borderColor: Colors.border.light,
   },
-  periodText: {
-    fontSize: Typography.fontSize.sm,
-    color: Colors.neutral[700],
+  statValue: {
+    fontSize: Typography.fontSize.xl,
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.neutral[900],
+    marginTop: Spacing.sm,
+  },
+  statLabel: {
+    fontSize: Typography.fontSize.xs,
+    color: Colors.neutral[600],
+    marginTop: 4,
+    textAlign: 'center',
   },
 
   // Product Performance
@@ -561,6 +687,12 @@ const styles = StyleSheet.create({
     fontSize: Typography.fontSize.sm,
     color: Colors.neutral[600],
     lineHeight: 20,
+  },
+  recommendationSupplier: {
+    fontSize: Typography.fontSize.xs,
+    color: Colors.neutral[500],
+    marginTop: 4,
+    fontStyle: 'italic',
   },
   recommendationAction: {
     flexDirection: 'row',

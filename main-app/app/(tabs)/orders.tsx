@@ -4,7 +4,7 @@
  * Based on html2/retailer/orders.html design
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,46 +13,99 @@ import {
   TouchableOpacity,
   FlatList,
   RefreshControl,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { Spacing, BorderRadius } from '@/constants/Spacing';
+import { ordersService, Order } from '@/services/ordersService';
+import aiOrdersService, { AIOrder } from '@/services/aiOrdersService';
+import { handleApiError } from '@/services/apiClient';
 
-// Order status types
-type OrderStatus = 'pending' | 'confirmed' | 'processing' | 'in-transit' | 'delivered' | 'cancelled';
+// Order status types matching backend
+type OrderStatus = 'pending' | 'accepted' | 'processing' | 'on_the_way' | 'delivered' | 'cancelled';
 type TabType = 'active' | 'ai-orders' | 'history' | 'returns';
-
-interface Order {
-  id: string;
-  orderNumber: string;
-  supplier: string;
-  date: string;
-  status: OrderStatus;
-  amount: number;
-}
-
-// Mock data
-const activeOrders: Order[] = [
-  { id: '1', orderNumber: '#1048', supplier: 'Unilever BD', date: '5 Nov', status: 'in-transit', amount: 12000 },
-  { id: '2', orderNumber: '#1047', supplier: 'ACI Ltd', date: '4 Nov', status: 'processing', amount: 8500 },
-  { id: '3', orderNumber: '#1046', supplier: 'Square Food', date: '3 Nov', status: 'confirmed', amount: 15300 },
-  { id: '4', orderNumber: '#1045', supplier: 'Pran Foods', date: '2 Nov', status: 'pending', amount: 6750 },
-];
-
-const historyOrders: Order[] = [
-  { id: '5', orderNumber: '#1044', supplier: 'Unilever BD', date: '28 Oct', status: 'delivered', amount: 14200 },
-  { id: '6', orderNumber: '#1043', supplier: 'ACI Ltd', date: '25 Oct', status: 'delivered', amount: 9800 },
-  { id: '7', orderNumber: '#1042', supplier: 'Square Food', date: '22 Oct', status: 'delivered', amount: 11500 },
-];
 
 export default function OrdersScreen() {
   const [selectedTab, setSelectedTab] = useState<TabType>('active');
   const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [activeOrders, setActiveOrders] = useState<Order[]>([]);
+  const [historyOrders, setHistoryOrders] = useState<Order[]>([]);
+  const [aiOrders, setAIOrders] = useState<AIOrder[]>([]);
+  const [aiOrdersLoading, setAIOrdersLoading] = useState(false);
+  const [approvingOrderId, setApprovingOrderId] = useState<string | null>(null);
+
+  // Fetch orders from API
+  const fetchOrders = useCallback(async () => {
+    try {
+      setLoading(true);
+      const fetchedOrders = await ordersService.getOrders();
+      
+      setOrders(fetchedOrders);
+      
+      // Separate active and history orders
+      const active = fetchedOrders.filter(order => 
+        ['pending', 'accepted', 'processing', 'on_the_way'].includes(order.status)
+      );
+      const history = fetchedOrders.filter(order => 
+        ['delivered', 'cancelled'].includes(order.status)
+      );
+      
+      setActiveOrders(active);
+      setHistoryOrders(history);
+    } catch (error) {
+      console.error('Failed to fetch orders:', error);
+      Alert.alert('Error', handleApiError(error));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Fetch AI orders
+  const fetchAIOrders = useCallback(async () => {
+    try {
+      setAIOrdersLoading(true);
+      const orders = await aiOrdersService.getAIOrders(5);
+      setAIOrders(orders);
+    } catch (error) {
+      console.error('Failed to fetch AI orders:', error);
+      // Don't show alert for AI orders failure, just log it
+    } finally {
+      setAIOrdersLoading(false);
+    }
+  }, []);
+
+  // Load orders on mount
+  useEffect(() => {
+    fetchOrders();
+    fetchAIOrders();
+  }, [fetchOrders, fetchAIOrders]);
+
+  // Format date for display
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) {
+      return 'Today';
+    } else if (diffDays === 1) {
+      return 'Yesterday';
+    } else if (diffDays < 7) {
+      return `${diffDays} days ago`;
+    } else {
+      return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    }
+  };
 
   const tabs = [
-    { key: 'active' as TabType, label: 'Active', count: 4 },
-    { key: 'ai-orders' as TabType, label: 'AI Orders', count: 2, isAI: true },
+    { key: 'active' as TabType, label: 'Active', count: activeOrders.length },
+    { key: 'ai-orders' as TabType, label: 'AI Orders', count: aiOrders.length, isAI: true },
     { key: 'history' as TabType, label: 'History', count: null },
     { key: 'returns' as TabType, label: 'Returns', count: 1, isWarning: true },
   ];
@@ -60,25 +113,94 @@ export default function OrdersScreen() {
   const getStatusStyle = (status: OrderStatus) => {
     switch (status) {
       case 'pending':
-        return { bg: '#FEF3C7', text: '#92400E', icon: 'time-outline' };
-      case 'confirmed':
-        return { bg: '#DBEAFE', text: '#1E40AF', icon: 'checkmark-circle-outline' };
+        return { bg: '#FEF3C7', text: '#92400E', icon: 'time-outline', label: 'Pending' };
+      case 'accepted':
+        return { bg: '#DBEAFE', text: '#1E40AF', icon: 'checkmark-circle-outline', label: 'Accepted' };
       case 'processing':
-        return { bg: '#E0E7FF', text: '#4338CA', icon: 'sync-outline' };
-      case 'in-transit':
-        return { bg: '#E0E7FF', text: '#4338CA', icon: 'car-outline' };
+        return { bg: '#E0E7FF', text: '#4338CA', icon: 'sync-outline', label: 'Processing' };
+      case 'on_the_way':
+        return { bg: '#E0E7FF', text: '#4338CA', icon: 'car-outline', label: 'On The Way' };
       case 'delivered':
-        return { bg: '#D1FAE5', text: '#065F46', icon: 'checkmark-done-outline' };
+        return { bg: '#D1FAE5', text: '#065F46', icon: 'checkmark-done-outline', label: 'Delivered' };
       case 'cancelled':
-        return { bg: '#FEE2E2', text: '#991B1B', icon: 'close-circle-outline' };
+        return { bg: '#FEE2E2', text: '#991B1B', icon: 'close-circle-outline', label: 'Cancelled' };
       default:
-        return { bg: Colors.neutral[100], text: Colors.neutral[600], icon: 'help-outline' };
+        return { bg: Colors.neutral[100], text: Colors.neutral[600], icon: 'help-outline', label: 'Unknown' };
     }
   };
 
-  const onRefresh = () => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1500);
+    await Promise.all([fetchOrders(), fetchAIOrders()]);
+    setRefreshing(false);
+  }, [fetchOrders, fetchAIOrders]);
+
+  // Handle approve AI order
+  const handleApproveOrder = async (orderId: string) => {
+    try {
+      setApprovingOrderId(orderId);
+      
+      Alert.alert(
+        'Approve Order',
+        'Are you sure you want to approve this AI-predicted order?',
+        [
+          {
+            text: 'Cancel',
+            style: 'cancel',
+            onPress: () => setApprovingOrderId(null),
+          },
+          {
+            text: 'Approve',
+            onPress: async () => {
+              try {
+                const result = await aiOrdersService.approveOrder(orderId);
+                Alert.alert(
+                  'Success',
+                  `Order #${result.order_id} created successfully!\nTotal: ৳${result.total_amount.toFixed(2)}`,
+                  [
+                    {
+                      text: 'OK',
+                      onPress: () => {
+                        fetchOrders(); // Refresh orders
+                        fetchAIOrders(); // Refresh AI orders
+                        setSelectedTab('active'); // Switch to active tab
+                      },
+                    },
+                  ]
+                );
+              } catch (error) {
+                Alert.alert('Error', handleApiError(error));
+              } finally {
+                setApprovingOrderId(null);
+              }
+            },
+          },
+        ]
+      );
+    } catch (error) {
+      console.error('Error approving order:', error);
+      setApprovingOrderId(null);
+    }
+  };
+
+  // Handle reject AI order
+  const handleRejectOrder = (orderId: string) => {
+    Alert.alert(
+      'Reject Order',
+      'Are you sure you want to reject this AI-predicted order?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Reject',
+          style: 'destructive',
+          onPress: () => {
+            // Remove from list
+            setAIOrders(prev => prev.filter(order => order.id !== orderId));
+            Alert.alert('Order Rejected', 'AI order has been rejected');
+          },
+        },
+      ]
+    );
   };
 
   const renderOrderCard = ({ item }: { item: Order }) => {
@@ -88,14 +210,13 @@ export default function OrdersScreen() {
       <View style={styles.orderCard}>
         <View style={styles.orderCardHeader}>
           <View style={styles.orderCardLeft}>
-            <Text style={styles.orderNumber}>{item.orderNumber}</Text>
-            <Text style={styles.orderDate}>{item.date}</Text>
+            <Text style={styles.orderNumber}>{item.order_number}</Text>
+            <Text style={styles.orderDate}>{formatDate(item.created_at)}</Text>
           </View>
           <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
             <Ionicons name={statusStyle.icon as any} size={14} color={statusStyle.text} />
             <Text style={[styles.statusText, { color: statusStyle.text }]}>
-              {item.status === 'in-transit' ? 'In Transit' : 
-               item.status.charAt(0).toUpperCase() + item.status.slice(1)}
+              {statusStyle.label}
             </Text>
           </View>
         </View>
@@ -103,14 +224,20 @@ export default function OrdersScreen() {
         <View style={styles.orderCardBody}>
           <View style={styles.supplierRow}>
             <Ionicons name="business-outline" size={16} color={Colors.neutral[500]} />
-            <Text style={styles.supplierName}>{item.supplier}</Text>
+            <Text style={styles.supplierName}>{item.supplier_name || 'Unknown Supplier'}</Text>
+          </View>
+          <View style={styles.orderItemsRow}>
+            <Ionicons name="cube-outline" size={14} color={Colors.neutral[500]} />
+            <Text style={styles.orderItemsText}>
+              {item.total_items} {item.total_items === 1 ? 'item' : 'items'} • {item.total_quantity} units
+            </Text>
           </View>
         </View>
 
         <View style={styles.orderCardFooter}>
           <View style={styles.amountContainer}>
             <Text style={styles.amountLabel}>Total Amount</Text>
-            <Text style={styles.amount}>৳{item.amount.toLocaleString()}</Text>
+            <Text style={styles.amount}>৳{parseFloat(item.total_amount).toLocaleString()}</Text>
           </View>
           <TouchableOpacity style={styles.trackButton}>
             <Text style={styles.trackButtonText}>Track Order</Text>
@@ -122,146 +249,138 @@ export default function OrdersScreen() {
   };
 
   const renderAIOrders = () => (
-    <ScrollView style={styles.aiOrdersContainer} showsVerticalScrollIndicator={false}>
+    <ScrollView 
+      style={styles.aiOrdersContainer} 
+      showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+    >
       <Text style={styles.sectionTitle}>AI Predicted Orders</Text>
       
-      {/* AI Order Card 1 */}
-      <View style={styles.aiCard}>
-        <View style={styles.aiCardHeader}>
-          <View style={styles.aiBadge}>
-            <Ionicons name="sparkles" size={14} color="#8b5cf6" />
-            <Text style={styles.aiBadgeText}>AI Predicted</Text>
-          </View>
-          <View style={styles.confidenceScore}>
-            <Text style={styles.confidenceValue}>90%</Text>
-            <Text style={styles.confidenceLabel}>Confidence</Text>
-          </View>
+      {aiOrdersLoading && !aiOrders.length ? (
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color={Colors.primary.main} />
+          <Text style={styles.loadingText}>Generating AI predictions...</Text>
         </View>
-
-        <View style={styles.aiCardBody}>
-          <Text style={styles.aiCardTitle}>Weekly Restock Recommendation</Text>
-          <Text style={styles.aiCardReason}>Based on sales trends, these products need restocking to meet demand.</Text>
-
-          <View style={styles.aiItems}>
-            <View style={styles.aiItem}>
-              <Text style={styles.aiItemIcon}>🥤</Text>
-              <View style={styles.aiItemDetails}>
-                <Text style={styles.aiItemName}>Coca Cola 250ml</Text>
-                <Text style={styles.aiItemQty}>Qty: 100 units</Text>
+      ) : aiOrders.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Ionicons name="sparkles-outline" size={64} color={Colors.neutral[300]} />
+          <Text style={styles.emptyTitle}>No AI Predictions Yet</Text>
+          <Text style={styles.emptyMessage}>
+            AI will analyze your sales patterns and suggest orders when patterns are detected.
+          </Text>
+        </View>
+      ) : (
+        aiOrders.map((aiOrder) => (
+          <View key={aiOrder.id} style={styles.aiCard}>
+            <View style={styles.aiCardHeader}>
+              <View style={styles.aiBadge}>
+                <Ionicons name="sparkles" size={14} color="#8b5cf6" />
+                <Text style={styles.aiBadgeText}>AI Predicted</Text>
               </View>
-              <Text style={styles.aiItemPrice}>৳2,500</Text>
-            </View>
-            <View style={styles.aiItem}>
-              <Text style={styles.aiItemIcon}>🧼</Text>
-              <View style={styles.aiItemDetails}>
-                <Text style={styles.aiItemName}>Detergent 1kg</Text>
-                <Text style={styles.aiItemQty}>Qty: 50 units</Text>
+              <View style={styles.confidenceScore}>
+                <Text 
+                  style={[
+                    styles.confidenceValue, 
+                    { color: aiOrdersService.getConfidenceColor(aiOrder.confidence_score) }
+                  ]}
+                >
+                  {aiOrder.confidence_score}%
+                </Text>
+                <Text style={styles.confidenceLabel}>Confidence</Text>
               </View>
-              <Text style={styles.aiItemPrice}>৳4,250</Text>
             </View>
-            <View style={styles.aiItem}>
-              <Text style={styles.aiItemIcon}>🥛</Text>
-              <View style={styles.aiItemDetails}>
-                <Text style={styles.aiItemName}>Fresh Milk 1L</Text>
-                <Text style={styles.aiItemQty}>Qty: 60 units</Text>
+
+            <View style={styles.aiCardBody}>
+              <Text style={styles.aiCardTitle}>{aiOrder.title}</Text>
+              <Text style={styles.aiCardReason}>{aiOrder.reason}</Text>
+
+              <View style={styles.aiSupplierRow}>
+                <Ionicons name="business-outline" size={16} color={Colors.neutral[500]} />
+                <Text style={styles.aiSupplierName}>{aiOrder.supplier_name}</Text>
               </View>
-              <Text style={styles.aiItemPrice}>৳5,700</Text>
-            </View>
-          </View>
 
-          <View style={styles.aiInsights}>
-            <View style={styles.insightTag}>
-              <Ionicons name="trending-up" size={12} color="#059669" />
-              <Text style={styles.insightText}>90% match to sales forecast</Text>
-            </View>
-            <View style={styles.insightTag}>
-              <Ionicons name="time-outline" size={12} color="#0284c7" />
-              <Text style={styles.insightText}>Delivery: 2-3 days</Text>
-            </View>
-          </View>
-
-          <View style={styles.aiTotal}>
-            <Text style={styles.aiTotalLabel}>Total Amount:</Text>
-            <Text style={styles.aiTotalValue}>৳12,450</Text>
-          </View>
-        </View>
-
-        <View style={styles.aiCardActions}>
-          <TouchableOpacity style={styles.rejectButton}>
-            <Ionicons name="close" size={18} color="#dc2626" />
-            <Text style={styles.rejectButtonText}>Reject</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.approveButton}>
-            <Ionicons name="checkmark" size={18} color="#fff" />
-            <Text style={styles.approveButtonText}>Approve Order</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* AI Order Card 2 */}
-      <View style={styles.aiCard}>
-        <View style={styles.aiCardHeader}>
-          <View style={styles.aiBadge}>
-            <Ionicons name="sparkles" size={14} color="#8b5cf6" />
-            <Text style={styles.aiBadgeText}>AI Predicted</Text>
-          </View>
-          <View style={styles.confidenceScore}>
-            <Text style={styles.confidenceValue}>85%</Text>
-            <Text style={styles.confidenceLabel}>Confidence</Text>
-          </View>
-        </View>
-
-        <View style={styles.aiCardBody}>
-          <Text style={styles.aiCardTitle}>Snacks Category Boost</Text>
-          <Text style={styles.aiCardReason}>Weekend demand spike expected based on historical patterns.</Text>
-
-          <View style={styles.aiItems}>
-            <View style={styles.aiItem}>
-              <Text style={styles.aiItemIcon}>🍟</Text>
-              <View style={styles.aiItemDetails}>
-                <Text style={styles.aiItemName}>Chips Family Pack</Text>
-                <Text style={styles.aiItemQty}>Qty: 40 units</Text>
+              <View style={styles.aiItems}>
+                {aiOrder.items.slice(0, 3).map((item, index) => (
+                  <View key={index} style={styles.aiItem}>
+                    <View style={styles.aiItemDetails}>
+                      <Text style={styles.aiItemName} numberOfLines={1}>
+                        {item.product_name}
+                      </Text>
+                      <Text style={styles.aiItemQty}>Qty: {item.quantity} units</Text>
+                    </View>
+                    <Text style={styles.aiItemPrice}>
+                      {aiOrdersService.formatCurrency(item.subtotal)}
+                    </Text>
+                  </View>
+                ))}
+                {aiOrder.items.length > 3 && (
+                  <Text style={styles.aiItemsMore}>
+                    +{aiOrder.items.length - 3} more items
+                  </Text>
+                )}
               </View>
-              <Text style={styles.aiItemPrice}>৳4,800</Text>
-            </View>
-            <View style={styles.aiItem}>
-              <Text style={styles.aiItemIcon}>🍫</Text>
-              <View style={styles.aiItemDetails}>
-                <Text style={styles.aiItemName}>Chocolate Bars</Text>
-                <Text style={styles.aiItemQty}>Qty: 80 units</Text>
+
+              <View style={styles.aiInsights}>
+                {aiOrder.insights.map((insight, index) => (
+                  <View key={index} style={styles.insightTag}>
+                    <Ionicons 
+                      name={index === 0 ? "trending-up" : "time-outline"} 
+                      size={12} 
+                      color={index === 0 ? "#059669" : "#0284c7"} 
+                    />
+                    <Text style={styles.insightText}>{insight}</Text>
+                  </View>
+                ))}
+                {aiOrder.estimated_delivery_days && (
+                  <View style={styles.insightTag}>
+                    <Ionicons name="car-outline" size={12} color="#0284c7" />
+                    <Text style={styles.insightText}>
+                      Delivery: {aiOrder.estimated_delivery_days}
+                    </Text>
+                  </View>
+                )}
               </View>
-              <Text style={styles.aiItemPrice}>৳3,200</Text>
+
+              <View style={styles.aiTotal}>
+                <Text style={styles.aiTotalLabel}>Total Amount:</Text>
+                <Text style={styles.aiTotalValue}>
+                  {aiOrdersService.formatCurrency(aiOrder.total_amount)}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.aiCardActions}>
+              <TouchableOpacity 
+                style={styles.rejectButton}
+                onPress={() => handleRejectOrder(aiOrder.id)}
+                disabled={approvingOrderId === aiOrder.id}
+              >
+                <Ionicons name="close" size={18} color="#dc2626" />
+                <Text style={styles.rejectButtonText}>Reject</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[
+                  styles.approveButton,
+                  approvingOrderId === aiOrder.id && styles.approveButtonDisabled
+                ]}
+                onPress={() => handleApproveOrder(aiOrder.id)}
+                disabled={approvingOrderId === aiOrder.id}
+              >
+                {approvingOrderId === aiOrder.id ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <>
+                    <Ionicons name="checkmark" size={18} color="#fff" />
+                    <Text style={styles.approveButtonText}>Approve Order</Text>
+                  </>
+                )}
+              </TouchableOpacity>
             </View>
           </View>
-
-          <View style={styles.aiInsights}>
-            <View style={styles.insightTag}>
-              <Ionicons name="trending-up" size={12} color="#059669" />
-              <Text style={styles.insightText}>85% match to sales forecast</Text>
-            </View>
-            <View style={styles.insightTag}>
-              <Ionicons name="time-outline" size={12} color="#0284c7" />
-              <Text style={styles.insightText}>Delivery: 1-2 days</Text>
-            </View>
-          </View>
-
-          <View style={styles.aiTotal}>
-            <Text style={styles.aiTotalLabel}>Total Amount:</Text>
-            <Text style={styles.aiTotalValue}>৳8,000</Text>
-          </View>
-        </View>
-
-        <View style={styles.aiCardActions}>
-          <TouchableOpacity style={styles.rejectButton}>
-            <Ionicons name="close" size={18} color="#dc2626" />
-            <Text style={styles.rejectButtonText}>Reject</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.approveButton}>
-            <Ionicons name="checkmark" size={18} color="#fff" />
-            <Text style={styles.approveButtonText}>Approve Order</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+        ))
+      )}
     </ScrollView>
   );
 
@@ -317,19 +436,37 @@ export default function OrdersScreen() {
   );
 
   const renderContent = () => {
+    // Show loading state
+    if (loading && !refreshing) {
+      return (
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color={Colors.primary.main} />
+          <Text style={styles.loadingText}>Loading orders...</Text>
+        </View>
+      );
+    }
+
     switch (selectedTab) {
       case 'active':
         return (
           <View style={styles.ordersContainer}>
             <Text style={styles.sectionTitle}>Active Orders</Text>
-            <FlatList
-              data={activeOrders}
-              renderItem={renderOrderCard}
-              keyExtractor={(item) => item.id}
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={styles.ordersList}
-              refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-            />
+            {activeOrders.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Ionicons name="clipboard-outline" size={64} color={Colors.neutral[400]} />
+                <Text style={styles.emptyTitle}>No Active Orders</Text>
+                <Text style={styles.emptyMessage}>You don't have any active orders at the moment.</Text>
+              </View>
+            ) : (
+              <FlatList
+                data={activeOrders}
+                renderItem={renderOrderCard}
+                keyExtractor={(item) => item.id.toString()}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.ordersList}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+              />
+            )}
           </View>
         );
       case 'ai-orders':
@@ -338,14 +475,22 @@ export default function OrdersScreen() {
         return (
           <View style={styles.ordersContainer}>
             <Text style={styles.sectionTitle}>Order History</Text>
-            <FlatList
-              data={historyOrders}
-              renderItem={renderOrderCard}
-              keyExtractor={(item) => item.id}
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={styles.ordersList}
-              refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-            />
+            {historyOrders.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Ionicons name="time-outline" size={64} color={Colors.neutral[400]} />
+                <Text style={styles.emptyTitle}>No Order History</Text>
+                <Text style={styles.emptyMessage}>Your completed orders will appear here.</Text>
+              </View>
+            ) : (
+              <FlatList
+                data={historyOrders}
+                renderItem={renderOrderCard}
+                keyExtractor={(item) => item.id.toString()}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.ordersList}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+              />
+            )}
           </View>
         );
       case 'returns':
@@ -511,6 +656,16 @@ const styles = StyleSheet.create({
     color: Colors.neutral[900],
     fontWeight: Typography.fontWeight.medium,
   },
+  orderItemsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    marginTop: Spacing.xs,
+  },
+  orderItemsText: {
+    fontSize: Typography.fontSize.sm,
+    color: Colors.neutral[600],
+  },
   orderCardFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -558,6 +713,37 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: Typography.fontSize.xs,
     fontWeight: Typography.fontWeight.bold,
+  },
+
+  // Loading & Empty States
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: Spacing.xl,
+  },
+  loadingText: {
+    marginTop: Spacing.md,
+    fontSize: Typography.fontSize.base,
+    color: Colors.neutral[600],
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: Spacing.xl,
+  },
+  emptyTitle: {
+    fontSize: Typography.fontSize.xl,
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.neutral[900],
+    marginTop: Spacing.md,
+    marginBottom: Spacing.xs,
+  },
+  emptyMessage: {
+    fontSize: Typography.fontSize.base,
+    color: Colors.neutral[600],
+    textAlign: 'center',
   },
 
   // AI Orders Styles
@@ -716,10 +902,33 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.md,
     backgroundColor: Colors.primary.main,
   },
+  approveButtonDisabled: {
+    opacity: 0.6,
+  },
   approveButtonText: {
     fontSize: Typography.fontSize.sm,
     fontWeight: Typography.fontWeight.semibold,
     color: '#fff',
+  },
+  aiSupplierRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    marginBottom: Spacing.md,
+    paddingBottom: Spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border.light,
+  },
+  aiSupplierName: {
+    fontSize: Typography.fontSize.sm,
+    color: Colors.neutral[700],
+    fontWeight: Typography.fontWeight.medium,
+  },
+  aiItemsMore: {
+    fontSize: Typography.fontSize.xs,
+    color: Colors.neutral[500],
+    fontStyle: 'italic',
+    marginTop: Spacing.xs,
   },
 
   // Returns Styles

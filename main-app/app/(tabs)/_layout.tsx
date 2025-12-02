@@ -3,7 +3,7 @@
  * Bottom navigation for retailer dashboard with top navbar and sidebar
  */
 
-import { Tabs } from 'expo-router';
+import { Tabs, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
@@ -13,16 +13,14 @@ import { Alert } from 'react-native';
 
 export default function RetailerTabLayout() {
   const [sidebarVisible, setSidebarVisible] = useState(false);
+  const router = useRouter();
 
   const handleNotificationPress = () => {
     Alert.alert('Notifications', '3 new updates available');
   };
 
   const handleProfilePress = () => {
-    setSidebarVisible(false);
-    setTimeout(() => {
-      // Navigation will be handled by tab
-    }, 300);
+    router.push('/(tabs)/profile');
   };
 
   return (
@@ -78,6 +76,15 @@ export default function RetailerTabLayout() {
         }}
       />
       <Tabs.Screen
+        name="cart"
+        options={{
+          title: 'Cart',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="cart-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="inventory"
         options={{
           title: 'Inventory',
@@ -96,12 +103,24 @@ export default function RetailerTabLayout() {
         }}
       />
       <Tabs.Screen
+        name="forecast"
+        options={{
+          title: 'Forecast',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="analytics-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-outline" size={size} color={color} />
-          ),
+          href: null, // Hide from bottom tabs, accessible via sidebar
+        }}
+      />
+      <Tabs.Screen
+        name="edit-profile"
+        options={{
+          href: null, // Hide from bottom tabs
         }}
       />
       <Tabs.Screen

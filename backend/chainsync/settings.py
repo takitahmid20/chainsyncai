@@ -28,7 +28,22 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-dti_j1%-t$pgo#2x-_=w@
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
+# Environment detection
+ENVIRONMENT = config('ENVIRONMENT', default='development')
+IS_PRODUCTION = ENVIRONMENT == 'production'
+
+# Dynamic ALLOWED_HOSTS - supports both localhost and production
+ALLOWED_HOSTS_CONFIG = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,0.0.0.0').split(',')
+if IS_PRODUCTION:
+    # Add fly.io domains
+    FLY_APP_NAME = config('FLY_APP_NAME', default='chainsync-backend-winter-sound-6706')
+    ALLOWED_HOSTS = ALLOWED_HOSTS_CONFIG + [
+        f'{FLY_APP_NAME}.fly.dev',
+        f'{FLY_APP_NAME}.internal',
+        '.fly.dev',
+    ]
+else:
+    ALLOWED_HOSTS = ALLOWED_HOSTS_CONFIG
 
 
 # Application definition
@@ -64,6 +79,7 @@ INSTALLED_APPS = [
     'media',
     'common',
     'sales',  # Daily sales tracking
+    'finance',  # Loan suggestions
 ]
 
 MIDDLEWARE = [
@@ -151,10 +167,23 @@ SPECTACULAR_SETTINGS = {
 }
 
 # CORS Settings
-CORS_ALLOWED_ORIGINS = config(
+CORS_ALLOWED_ORIGINS_CONFIG = config(
     'CORS_ALLOWED_ORIGINS',
     default='http://localhost:3000,http://localhost:8081'
 ).split(',')
+
+if IS_PRODUCTION:
+    # In production, be more restrictive with CORS
+    CORS_ALLOW_ALL_ORIGINS = False
+    # Add production frontend URLs
+    FRONTEND_URL = config('FRONTEND_URL', default='')
+    if FRONTEND_URL:
+        CORS_ALLOWED_ORIGINS_CONFIG.append(FRONTEND_URL)
+    CORS_ALLOWED_ORIGINS = CORS_ALLOWED_ORIGINS_CONFIG
+else:
+    # For local development, allow all origins for mobile app
+    CORS_ALLOW_ALL_ORIGINS = config('CORS_ALLOW_ALL_ORIGINS', default=True, cast=bool)
+    CORS_ALLOWED_ORIGINS = CORS_ALLOWED_ORIGINS_CONFIG
 
 CORS_ALLOW_CREDENTIALS = True
 

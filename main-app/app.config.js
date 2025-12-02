@@ -20,10 +20,15 @@ export default {
         monochromeImage: './assets/images/android-icon-monochrome.png',
       },
       package: 'com.chainsync.ai',
+      versionCode: 1,
       edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,
       // Allow cleartext (HTTP) traffic for local development
       usesCleartextTraffic: true,
+      permissions: [
+        'INTERNET',
+        'ACCESS_NETWORK_STATE'
+      ],
     },
     web: {
       output: 'static',
@@ -49,10 +54,17 @@ export default {
       reactCompiler: true,
     },
     extra: {
+      // EAS Project ID
+      eas: {
+        projectId: "81a138b3-59bc-4b28-9e68-2fd3740450a0"
+      },
       // API Configuration - can be overridden by environment variables
-      // Use local IP address for mobile/web testing (192.168.68.110 is your Mac's local IP)
-      // Change this to your computer's IP if different
-      apiBaseUrl: process.env.API_BASE_URL || 'http://192.168.68.110:8000',
+      // For production APK: Set APP_ENV=production to use fly.io backend
+      // For local development: Use your computer's local IP
+      apiBaseUrl: process.env.API_BASE_URL || 
+        (process.env.APP_ENV === 'production' 
+          ? 'https://chainsync-backend-winter-sound-6706.fly.dev' 
+          : 'http://172.16.30.89:8000'),
       apiTimeout: process.env.API_TIMEOUT || '30000',
       appEnv: process.env.APP_ENV || 'development',
     },

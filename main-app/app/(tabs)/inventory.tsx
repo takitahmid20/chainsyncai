@@ -4,7 +4,7 @@
  * Based on html2/retailer/inventory.html design
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,134 +13,161 @@ import {
   TextInput,
   TouchableOpacity,
   FlatList,
-  Image,
   Modal,
+  Alert,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { Spacing, BorderRadius } from '@/constants/Spacing';
+import {
+  inventoryService,
+  InventoryProduct,
+  AIRestockSuggestion,
+  StockStatus,
+} from '@/services/inventoryService';
+import { cartService } from '@/services/cartService';
+import { generateAIOrders, autoExecuteOrders, AIOrder } from '@/services/aiOrderService';
 
-type StockStatus = 'low' | 'good' | 'out';
-type Category = 'beverages' | 'dairy' | 'snacks' | 'grocery' | 'cleaning';
+type Category = 'all' | string;
 type Priority = 'high' | 'medium' | 'low';
 
-interface Product {
-  id: string;
-  name: string;
-  sku: string;
-  category: Category;
-  currentStock: number;
-  minStock: number;
-  maxStock: number;
-  unitPrice: number;
-  imageUrl?: string;
-  stockStatus: StockStatus;
-}
-
-interface AIOrderItem {
-  product: Product;
-  suggestedQty: number;
-  priority: Priority;
-  reason: string;
+interface AIOrderItem extends AIRestockSuggestion {
   isSelected: boolean;
 }
 
-// Mock data
-const mockProducts: Product[] = [
-  {
-    id: '1',
-    name: 'Coca Cola 250ml',
-    sku: 'BEV-1001',
-    category: 'beverages',
-    currentStock: 45,
-    minStock: 30,
-    maxStock: 200,
-    unitPrice: 25,
-    stockStatus: 'good',
-  },
-  {
-    id: '2',
-    name: 'Detergent Powder 1kg',
-    sku: 'CLN-2001',
-    category: 'cleaning',
-    currentStock: 12,
-    minStock: 20,
-    maxStock: 100,
-    unitPrice: 85,
-    stockStatus: 'low',
-  },
-  {
-    id: '3',
-    name: 'Fresh Milk 1L',
-    sku: 'DAI-3001',
-    category: 'dairy',
-    currentStock: 8,
-    minStock: 15,
-    maxStock: 80,
-    unitPrice: 95,
-    stockStatus: 'low',
-  },
-  {
-    id: '4',
-    name: 'Chips Family Pack',
-    sku: 'SNK-4001',
-    category: 'snacks',
-    currentStock: 0,
-    minStock: 25,
-    maxStock: 150,
-    unitPrice: 120,
-    stockStatus: 'out',
-  },
-  {
-    id: '5',
-    name: 'Basmati Rice 5kg',
-    sku: 'GRO-5001',
-    category: 'grocery',
-    currentStock: 75,
-    minStock: 40,
-    maxStock: 200,
-    unitPrice: 550,
-    stockStatus: 'good',
-  },
-  {
-    id: '6',
-    name: 'Yogurt Cup 200g',
-    sku: 'DAI-3002',
-    category: 'dairy',
-    currentStock: 18,
-    minStock: 20,
-    maxStock: 100,
-    unitPrice: 35,
-    stockStatus: 'low',
-  },
-];
-
 export default function InventoryScreen() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<'all' | Category>('all');
+  const [categoryFilter, setCategoryFilter] = useState<Category>('all');
   const [stockFilter, setStockFilter] = useState<'all' | StockStatus>('all');
-  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [selectedProducts, setSelectedProducts] = useState<number[]>([]);
   const [showAIModal, setShowAIModal] = useState(false);
   const [aiOrderItems, setAIOrderItems] = useState<AIOrderItem[]>([]);
+  const [addingToCart, setAddingToCart] = useState<{ [key: number]: boolean }>({});
+  const [bulkOrdering, setBulkOrdering] = useState(false);
+  
+  // Auto Order state
+  const [showAutoOrderModal, setShowAutoOrderModal] = useState(false);
+  const [aiOrders, setAIOrders] = useState<AIOrder[]>([]);
+  const [selectedAIOrders, setSelectedAIOrders] = useState<string[]>([]);
+  const [loadingAIOrders, setLoadingAIOrders] = useState(false);
+  const [executingOrders, setExecutingOrders] = useState(false);
+  
+  // API state
+  const [products, setProducts] = useState<InventoryProduct[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lowStockCount, setLowStockCount] = useState(0);
+  const [outOfStockCount, setOutOfStockCount] = useState(0);
+  const [categories, setCategories] = useState<string[]>([]);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
 
-  // Initialize AI order suggestions
-  React.useEffect(() => {
-    const lowStockProducts = mockProducts.filter(p => p.stockStatus === 'low' || p.stockStatus === 'out');
-    const aiSuggestions: AIOrderItem[] = lowStockProducts.map(product => ({
-      product,
-      suggestedQty: product.maxStock - product.currentStock,
-      priority: product.stockStatus === 'out' ? 'high' : 
-                product.currentStock < product.minStock / 2 ? 'high' : 'medium',
-      reason: product.stockStatus === 'out' 
-        ? 'Critical low • Daily essential item'
-        : product.currentStock < product.minStock / 2
-        ? `Shortage in ${Math.ceil((product.currentStock / product.minStock) * 7)} days • High demand`
-        : 'Weekend demand spike expected',
-      isSelected: true,
-    }));
-    setAIOrderItems(aiSuggestions);
+  // Fetch inventory data
+  const fetchInventory = useCallback(async (page = 1, append = false) => {
+    try {
+      if (!append) {
+        setLoading(true);
+      }
+      
+      const response = await inventoryService.getInventory({
+        search: searchQuery || undefined,
+        category: categoryFilter !== 'all' ? categoryFilter : undefined,
+        stock_status: stockFilter !== 'all' ? stockFilter : undefined,
+        page,
+        page_size: 10,
+      });
+      
+      if (append) {
+        setProducts(prev => [...prev, ...response.products]);
+      } else {
+        setProducts(response.products);
+      }
+      
+      setCurrentPage(response.current_page);
+      setTotalPages(response.total_pages);
+      setTotalCount(response.count);
+      setHasMore(response.next !== null);
+      setLowStockCount(response.summary.low_stock);
+      setOutOfStockCount(response.summary.out_of_stock);
+      
+      // Extract unique categories (only on first load)
+      if (page === 1) {
+        const uniqueCategories = [...new Set(response.products.map(p => p.category_slug).filter(Boolean))];
+        setCategories(uniqueCategories);
+      }
+      
+    } catch (error: any) {
+      console.error('Failed to fetch inventory:', error);
+      Alert.alert('Error', 'Failed to load inventory. Please try again.');
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
+  }, [searchQuery, categoryFilter, stockFilter]);
+
+  // Fetch AI suggestions
+  const fetchAISuggestions = async () => {
+    try {
+      const response = await inventoryService.getAIRestockSuggestions();
+      const suggestions: AIOrderItem[] = response.suggestions.map(s => ({
+        ...s,
+        isSelected: true,
+      }));
+      setAIOrderItems(suggestions);
+      setShowAIModal(true);
+    } catch (error: any) {
+      console.error('Failed to fetch AI suggestions:', error);
+      Alert.alert('Error', 'Failed to load AI suggestions. Please try again.');
+    }
+  };
+
+  // Handle refresh
+  const onRefresh = async () => {
+    setRefreshing(true);
+    setCurrentPage(1);
+    await fetchInventory(1);
+    setRefreshing(false);
+  };
+  
+  // Handle load more
+  const handleLoadMore = () => {
+    if (hasMore && !loadingMore && !loading) {
+      setLoadingMore(true);
+      fetchInventory(currentPage + 1, true);
+    }
+  };
+
+  // Initial fetch
+  useEffect(() => {
+    fetchInventory(1);
   }, []);
+
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchQuery !== undefined) {
+        setCurrentPage(1);
+        fetchInventory(1);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Fetch when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+    fetchInventory(1);
+  }, [categoryFilter, stockFilter]);
 
   const getStockStatusStyle = (status: StockStatus) => {
     switch (status) {
@@ -153,15 +180,9 @@ export default function InventoryScreen() {
     }
   };
 
-  const getCategoryLabel = (category: Category) => {
-    const labels = {
-      beverages: 'Beverages',
-      dairy: 'Dairy',
-      snacks: 'Snacks',
-      grocery: 'Grocery',
-      cleaning: 'Cleaning',
-    };
-    return labels[category];
+  const getCategoryLabel = (category: string) => {
+    // Capitalize first letter
+    return category.charAt(0).toUpperCase() + category.slice(1);
   };
 
   const getStockStatusLabel = (status: StockStatus) => {
@@ -173,22 +194,21 @@ export default function InventoryScreen() {
     return labels[status];
   };
 
-  const toggleProductSelection = (id: string) => {
+  const toggleProductSelection = (id: number) => {
     setSelectedProducts(prev =>
       prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]
     );
   };
 
-  const filteredProducts = mockProducts.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         product.sku.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = categoryFilter === 'all' || product.category === categoryFilter;
-    const matchesStock = stockFilter === 'all' || product.stockStatus === stockFilter;
-    return matchesSearch && matchesCategory && matchesStock;
-  });
-
-  const lowStockCount = mockProducts.filter(p => p.stockStatus === 'low').length;
-  const outOfStockCount = mockProducts.filter(p => p.stockStatus === 'out').length;
+  const handleSelectAll = () => {
+    if (selectedProducts.length === products.length) {
+      // Deselect all
+      setSelectedProducts([]);
+    } else {
+      // Select all current products
+      setSelectedProducts(products.map(p => p.id));
+    }
+  };
 
   const getPriorityStyle = (priority: Priority) => {
     switch (priority) {
@@ -209,14 +229,14 @@ export default function InventoryScreen() {
 
   const updateAIItemQty = (index: number, qty: number) => {
     setAIOrderItems(prev => prev.map((item, i) => 
-      i === index ? { ...item, suggestedQty: Math.max(1, qty) } : item
+      i === index ? { ...item, suggested_quantity: Math.max(1, qty) } : item
     ));
   };
 
   const calculateAIOrderTotal = () => {
     return aiOrderItems
       .filter(item => item.isSelected)
-      .reduce((sum, item) => sum + (item.product.unitPrice * item.suggestedQty), 0);
+      .reduce((sum, item) => sum + item.estimated_cost, 0);
   };
 
   const getSelectedAIItemsCount = () => {
@@ -226,21 +246,319 @@ export default function InventoryScreen() {
   const getTotalAIUnits = () => {
     return aiOrderItems
       .filter(item => item.isSelected)
-      .reduce((sum, item) => sum + item.suggestedQty, 0);
+      .reduce((sum, item) => sum + item.suggested_quantity, 0);
   };
 
-  const handleApproveAIOrder = () => {
-    // TODO: Implement order submission
+  const handleReorder = async (product: InventoryProduct) => {
+    try {
+      setAddingToCart(prev => ({ ...prev, [product.id]: true }));
+      
+      // Determine quantity: use minimum order quantity or 1, whichever is higher
+      const quantity = Math.max(product.minimum_order_quantity, 1);
+      
+      await cartService.addToCart(product.id, quantity);
+      
+      Alert.alert(
+        'Added to Cart',
+        `${product.name} (${quantity} ${product.unit}) has been added to your cart.`,
+        [
+          {
+            text: 'Continue Shopping',
+            style: 'cancel',
+          },
+          {
+            text: 'View Cart',
+            onPress: () => router.push('/cart'),
+          },
+        ]
+      );
+    } catch (error: any) {
+      console.error('Failed to add to cart:', error);
+      const errorMessage = error?.response?.data?.error || 'Failed to add product to cart. Please try again.';
+      Alert.alert('Error', errorMessage);
+    } finally {
+      setAddingToCart(prev => ({ ...prev, [product.id]: false }));
+    }
+  };
+
+  const handleBulkOrder = async () => {
+    if (selectedProducts.length === 0) {
+      Alert.alert('No Selection', 'Please select at least one product to order.');
+      return;
+    }
+
+    // Get selected products details
+    const selectedProductsData = products.filter(p => selectedProducts.includes(p.id));
+    
+    // Calculate total
+    const totalItems = selectedProductsData.length;
+    const totalUnits = selectedProductsData.reduce((sum, p) => 
+      sum + Math.max(p.minimum_order_quantity, 1), 0
+    );
+    const totalCost = selectedProductsData.reduce((sum, p) => {
+      const quantity = Math.max(p.minimum_order_quantity, 1);
+      const price = parseFloat(p.discount_price || p.price);
+      return sum + (quantity * price);
+    }, 0);
+
+    // Show confirmation
+    Alert.alert(
+      'Confirm Bulk Order',
+      `Add ${totalItems} product(s) (${totalUnits} total units) to cart?\n\nEstimated Total: ৳${totalCost.toFixed(2)}`,
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Add to Cart',
+          onPress: async () => {
+            try {
+              setBulkOrdering(true);
+              
+              let successCount = 0;
+              let failCount = 0;
+              const failedProducts: string[] = [];
+              
+              // Add each product to cart
+              for (const product of selectedProductsData) {
+                try {
+                  const quantity = Math.max(product.minimum_order_quantity, 1);
+                  await cartService.addToCart(product.id, quantity);
+                  successCount++;
+                } catch (error: any) {
+                  console.error(`Failed to add product ${product.id} to cart:`, error);
+                  failCount++;
+                  failedProducts.push(product.name);
+                }
+              }
+              
+              // Clear selection
+              setSelectedProducts([]);
+              
+              // Show result
+              if (successCount > 0) {
+                const message = failCount > 0
+                  ? `${successCount} item(s) added to cart successfully.\n${failCount} item(s) failed to add.`
+                  : `Successfully added ${successCount} item(s) to cart!`;
+                
+                Alert.alert(
+                  'Bulk Order Complete',
+                  message,
+                  [
+                    {
+                      text: 'Continue Shopping',
+                      style: 'cancel',
+                    },
+                    {
+                      text: 'View Cart',
+                      onPress: () => router.push('/cart'),
+                    },
+                  ]
+                );
+              } else {
+                Alert.alert(
+                  'Bulk Order Failed',
+                  'Failed to add products to cart. Please try again.',
+                  [{ text: 'OK' }]
+                );
+              }
+            } catch (error: any) {
+              console.error('Bulk order error:', error);
+              Alert.alert('Error', 'An error occurred while processing bulk order.');
+            } finally {
+              setBulkOrdering(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleApproveAIOrder = async () => {
     const selectedItems = aiOrderItems.filter(item => item.isSelected);
-    console.log('Approving AI order:', selectedItems);
-    setShowAIModal(false);
-    // Show success message
+    
+    if (selectedItems.length === 0) {
+      Alert.alert('No Items', 'Please select at least one item to order.');
+      return;
+    }
+
+    try {
+      // Add all selected items to cart
+      let successCount = 0;
+      let failCount = 0;
+      const errors: string[] = [];
+      
+      for (const item of selectedItems) {
+        try {
+          await cartService.addToCart(item.product_id, item.suggested_quantity);
+          successCount++;
+        } catch (error: any) {
+          console.error(`Failed to add product ${item.product_id} to cart:`, error);
+          failCount++;
+          
+          // Extract error message from response
+          const errorMsg = error?.response?.data?.error || 
+                          error?.response?.data?.message ||
+                          error?.message ||
+                          'Unknown error';
+          
+          errors.push(`${item.product_name}: ${errorMsg}`);
+        }
+      }
+      
+      setShowAIModal(false);
+      
+      if (successCount > 0) {
+        const message = failCount > 0
+          ? `${successCount} item(s) added successfully.\n\n${failCount} failed:\n${errors.join('\n')}`
+          : `Successfully added ${successCount} item(s) to cart!`;
+        
+        Alert.alert(
+          'Added to Cart',
+          message,
+          [
+            {
+              text: 'Continue Shopping',
+              style: 'cancel',
+            },
+            {
+              text: 'View Cart',
+              onPress: () => router.push('/cart'),
+            },
+          ]
+        );
+      } else {
+        Alert.alert(
+          'Failed to Add Items', 
+          `Could not add items to cart:\n\n${errors.join('\n\n')}`,
+          [{ text: 'OK' }]
+        );
+      }
+    } catch (error: any) {
+      console.error('Failed to process AI order:', error);
+      Alert.alert('Error', 'Failed to process order. Please try again.');
+    }
   };
 
-  const renderProductCard = ({ item }: { item: Product }) => {
-    const statusStyle = getStockStatusStyle(item.stockStatus);
+  // Auto Order Functions
+  const handleAutoOrderClick = async () => {
+    try {
+      setLoadingAIOrders(true);
+      setShowAutoOrderModal(true);
+      
+      const orders = await generateAIOrders(10); // Get up to 10 AI order suggestions
+      setAIOrders(orders);
+      
+      // Pre-select urgent orders
+      const urgentOrderIds = orders
+        .filter(order => order.urgency_level === 'urgent')
+        .map(order => order.id);
+      setSelectedAIOrders(urgentOrderIds);
+    } catch (error: any) {
+      console.error('Failed to generate AI orders:', error);
+      Alert.alert('Error', 'Failed to generate AI order suggestions. Please try again.');
+      setShowAutoOrderModal(false);
+    } finally {
+      setLoadingAIOrders(false);
+    }
+  };
+
+  const toggleAIOrderSelection = (orderId: string) => {
+    setSelectedAIOrders(prev => 
+      prev.includes(orderId)
+        ? prev.filter(id => id !== orderId)
+        : [...prev, orderId]
+    );
+  };
+
+  const handleExecuteAutoOrders = async () => {
+    if (selectedAIOrders.length === 0) {
+      Alert.alert('No Orders Selected', 'Please select at least one order to execute.');
+      return;
+    }
+
+    const selectedOrdersData = aiOrders.filter(order => selectedAIOrders.includes(order.id));
+    const totalCost = selectedOrdersData.reduce((sum, order) => sum + order.estimated_total, 0);
+    const totalProducts = selectedOrdersData.reduce((sum, order) => sum + order.total_items, 0);
+
+    Alert.alert(
+      'Confirm Auto Order',
+      `Execute ${selectedAIOrders.length} order(s)?\n\n` +
+      `Total Products: ${totalProducts}\n` +
+      `Estimated Cost: ৳${totalCost.toLocaleString()}\n\n` +
+      `This will automatically create orders with your suppliers.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Execute Orders', 
+          style: 'default',
+          onPress: async () => {
+            try {
+              setExecutingOrders(true);
+              const selectedOrdersData = aiOrders.filter(order => selectedAIOrders.includes(order.id));
+              const results = await autoExecuteOrders(selectedOrdersData);
+              
+              setShowAutoOrderModal(false);
+              
+              if (results.success.length > 0) {
+                const message = results.failed.length > 0
+                  ? `${results.success.length} order(s) created successfully.\n\n` +
+                    `${results.failed.length} failed:\n` +
+                    results.failed.map(f => `Order: ${f.error}`).join('\n')
+                  : `Successfully created ${results.success.length} order(s)!`;
+                
+                Alert.alert(
+                  'Auto Order Complete',
+                  message,
+                  [
+                    {
+                      text: 'View Orders',
+                      onPress: () => router.push('/orders'),
+                    },
+                    {
+                      text: 'OK',
+                      style: 'cancel',
+                    },
+                  ]
+                );
+                
+                // Refresh inventory after orders
+                fetchInventory(1, false);
+              } else {
+                Alert.alert(
+                  'Auto Order Failed',
+                  `Could not create orders:\n\n${results.failed.map(f => f.error).join('\n')}`,
+                  [{ text: 'OK' }]
+                );
+              }
+            } catch (error: any) {
+              console.error('Failed to execute auto orders:', error);
+              Alert.alert('Error', 'Failed to execute auto orders. Please try again.');
+            } finally {
+              setExecutingOrders(false);
+            }
+          }
+        },
+      ]
+    );
+  };
+
+  const getAutoOrderSummary = () => {
+    const selected = aiOrders.filter(order => selectedAIOrders.includes(order.id));
+    return {
+      totalOrders: selected.length,
+      totalProducts: selected.reduce((sum, order) => sum + order.total_items, 0),
+      totalCost: selected.reduce((sum, order) => sum + order.estimated_total, 0),
+      urgentOrders: selected.filter(order => order.urgency_level === 'urgent').length,
+    };
+  };
+
+  const renderProductCard = ({ item }: { item: InventoryProduct }) => {
+    const statusStyle = getStockStatusStyle(item.stock_status);
     const isSelected = selectedProducts.includes(item.id);
-    const stockPercentage = (item.currentStock / item.maxStock) * 100;
+    const stockPercentage = item.stock_percentage;
+    const unitPrice = parseFloat(item.discount_price || item.price);
 
     return (
       <TouchableOpacity
@@ -259,7 +577,7 @@ export default function InventoryScreen() {
           <View style={[styles.productStatusBadge, { backgroundColor: statusStyle.bg }]}>
             <Ionicons name={statusStyle.icon as any} size={12} color={statusStyle.text} />
             <Text style={[styles.productStatusText, { color: statusStyle.text }]}>
-              {getStockStatusLabel(item.stockStatus)}
+              {getStockStatusLabel(item.stock_status)}
             </Text>
           </View>
         </View>
@@ -270,11 +588,13 @@ export default function InventoryScreen() {
           </View>
           <View style={styles.productInfo}>
             <Text style={styles.productName}>{item.name}</Text>
-            <Text style={styles.productSku}>SKU: {item.sku}</Text>
-            <View style={styles.productCategory}>
-              <Ionicons name="pricetag-outline" size={12} color={Colors.neutral[500]} />
-              <Text style={styles.productCategoryText}>{getCategoryLabel(item.category)}</Text>
-            </View>
+            <Text style={styles.productSku}>SKU: {item.sku || `PRD-${item.id}`}</Text>
+            {item.category_name && (
+              <View style={styles.productCategory}>
+                <Ionicons name="pricetag-outline" size={12} color={Colors.neutral[500]} />
+                <Text style={styles.productCategoryText}>{item.category_name}</Text>
+              </View>
+            )}
           </View>
         </View>
 
@@ -285,25 +605,35 @@ export default function InventoryScreen() {
                 styles.stockProgressFill,
                 {
                   width: `${Math.min(stockPercentage, 100)}%`,
-                  backgroundColor: item.stockStatus === 'out' ? '#dc2626' :
-                                  item.stockStatus === 'low' ? '#f59e0b' : '#10b981'
+                  backgroundColor: item.stock_status === 'out' ? '#dc2626' :
+                                  item.stock_status === 'low' ? '#f59e0b' : '#10b981'
                 }
               ]}
             />
           </View>
           <Text style={styles.stockProgressText}>
-            {item.currentStock} / {item.maxStock} units
+            {item.stock_quantity} / {item.minimum_order_quantity * 3} units
           </Text>
         </View>
 
         <View style={styles.productCardFooter}>
           <View style={styles.priceSection}>
             <Text style={styles.priceLabel}>Unit Price</Text>
-            <Text style={styles.priceValue}>৳{item.unitPrice}</Text>
+            <Text style={styles.priceValue}>৳{unitPrice.toFixed(2)}</Text>
           </View>
-          <TouchableOpacity style={styles.reorderButton}>
-            <Ionicons name="cart-outline" size={16} color="#fff" />
-            <Text style={styles.reorderButtonText}>Reorder</Text>
+          <TouchableOpacity 
+            style={[styles.reorderButton, addingToCart[item.id] && styles.reorderButtonDisabled]}
+            onPress={() => handleReorder(item)}
+            disabled={addingToCart[item.id]}
+          >
+            {addingToCart[item.id] ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <>
+                <Ionicons name="cart-outline" size={16} color="#fff" />
+                <Text style={styles.reorderButtonText}>Reorder</Text>
+              </>
+            )}
           </TouchableOpacity>
         </View>
       </TouchableOpacity>
@@ -314,7 +644,7 @@ export default function InventoryScreen() {
     <View style={styles.container}>
       {/* AI Alert Strip */}
       {(lowStockCount > 0 || outOfStockCount > 0) && (
-        <TouchableOpacity style={styles.aiAlertStrip} onPress={() => setShowAIModal(true)}>
+        <TouchableOpacity style={styles.aiAlertStrip} onPress={fetchAISuggestions}>
           <View style={styles.aiAlertIcon}>
             <Ionicons name="sparkles" size={16} color="#8b5cf6" />
           </View>
@@ -326,7 +656,7 @@ export default function InventoryScreen() {
               {outOfStockCount > 0 && `${outOfStockCount} out of stock`}
             </Text>
           </View>
-          <TouchableOpacity style={styles.aiActionButton} onPress={() => setShowAIModal(true)}>
+          <TouchableOpacity style={styles.aiActionButton} onPress={handleAutoOrderClick}>
             <Text style={styles.aiActionButtonText}>Auto Order</Text>
           </TouchableOpacity>
         </TouchableOpacity>
@@ -344,30 +674,32 @@ export default function InventoryScreen() {
         />
       </View>
 
-      {/* Filter Row */}
-      <View style={styles.filterRow}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScrollContent}>
-          <TouchableOpacity
-            style={[styles.filterChip, categoryFilter === 'all' && styles.filterChipActive]}
-            onPress={() => setCategoryFilter('all')}
-          >
-            <Text style={[styles.filterChipText, categoryFilter === 'all' && styles.filterChipTextActive]}>
-              All
-            </Text>
-          </TouchableOpacity>
-          {(['beverages', 'dairy', 'snacks', 'grocery', 'cleaning'] as Category[]).map(cat => (
+      {/* Filter Row - Categories */}
+      {categories.length > 0 && (
+        <View style={styles.filterRow}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScrollContent}>
             <TouchableOpacity
-              key={cat}
-              style={[styles.filterChip, categoryFilter === cat && styles.filterChipActive]}
-              onPress={() => setCategoryFilter(cat)}
+              style={[styles.filterChip, categoryFilter === 'all' && styles.filterChipActive]}
+              onPress={() => setCategoryFilter('all')}
             >
-              <Text style={[styles.filterChipText, categoryFilter === cat && styles.filterChipTextActive]}>
-                {getCategoryLabel(cat)}
+              <Text style={[styles.filterChipText, categoryFilter === 'all' && styles.filterChipTextActive]}>
+                All
               </Text>
             </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
+            {categories.map(cat => (
+              <TouchableOpacity
+                key={cat}
+                style={[styles.filterChip, categoryFilter === cat && styles.filterChipActive]}
+                onPress={() => setCategoryFilter(cat)}
+              >
+                <Text style={[styles.filterChipText, categoryFilter === cat && styles.filterChipTextActive]}>
+                  {getCategoryLabel(cat)}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      )}
 
       {/* Stock Filter Row */}
       <View style={styles.stockFilterRow}>
@@ -392,6 +724,19 @@ export default function InventoryScreen() {
             </TouchableOpacity>
           ))}
         </ScrollView>
+        <TouchableOpacity
+          style={styles.selectAllButton}
+          onPress={handleSelectAll}
+        >
+          <Ionicons 
+            name={selectedProducts.length === products.length ? "checkbox" : "square-outline"} 
+            size={18} 
+            color={Colors.primary.main} 
+          />
+          <Text style={styles.selectAllText}>
+            {selectedProducts.length === products.length ? 'Deselect All' : 'Select All'}
+          </Text>
+        </TouchableOpacity>
       </View>
 
       {/* Selected Products Bar */}
@@ -401,13 +746,24 @@ export default function InventoryScreen() {
             {selectedProducts.length} item{selectedProducts.length > 1 ? 's' : ''} selected
           </Text>
           <View style={styles.bulkActions}>
-            <TouchableOpacity style={styles.bulkButton}>
-              <Ionicons name="cart-outline" size={18} color="#fff" />
-              <Text style={styles.bulkButtonText}>Bulk Order</Text>
+            <TouchableOpacity 
+              style={[styles.bulkButton, bulkOrdering && styles.bulkButtonDisabled]}
+              onPress={handleBulkOrder}
+              disabled={bulkOrdering}
+            >
+              {bulkOrdering ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <>
+                  <Ionicons name="cart-outline" size={18} color="#fff" />
+                  <Text style={styles.bulkButtonText}>Bulk Order</Text>
+                </>
+              )}
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.clearButton}
               onPress={() => setSelectedProducts([])}
+              disabled={bulkOrdering}
             >
               <Text style={styles.clearButtonText}>Clear</Text>
             </TouchableOpacity>
@@ -416,13 +772,51 @@ export default function InventoryScreen() {
       )}
 
       {/* Products List */}
-      <FlatList
-        data={filteredProducts}
-        renderItem={renderProductCard}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.productsList}
-        showsVerticalScrollIndicator={false}
-      />
+      {loading && !refreshing ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors.primary.main} />
+          <Text style={styles.loadingText}>Loading inventory...</Text>
+        </View>
+      ) : products.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Ionicons name="cube-outline" size={64} color={Colors.neutral[300]} />
+          <Text style={styles.emptyText}>No products found</Text>
+          <Text style={styles.emptySubtext}>Try adjusting your filters</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={products}
+          renderItem={renderProductCard}
+          keyExtractor={item => item.id.toString()}
+          contentContainerStyle={styles.productsList}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={() => {
+            if (loadingMore) {
+              return (
+                <View style={styles.loadingMore}>
+                  <ActivityIndicator size="small" color={Colors.primary.main} />
+                  <Text style={styles.loadingMoreText}>Loading more products...</Text>
+                </View>
+              );
+            }
+            if (!hasMore && products.length > 0) {
+              return (
+                <View style={styles.endOfList}>
+                  <Text style={styles.endOfListText}>
+                    Showing {products.length} of {totalCount} products
+                  </Text>
+                </View>
+              );
+            }
+            return null;
+          }}
+        />
+      )}
 
       {/* Add Product FAB */}
       <TouchableOpacity style={styles.fab}>
@@ -463,10 +857,10 @@ export default function InventoryScreen() {
               <View style={styles.aiOrderList}>
                 {aiOrderItems.map((item, index) => {
                   const priorityStyle = getPriorityStyle(item.priority);
-                  const subtotal = item.product.unitPrice * item.suggestedQty;
+                  const subtotal = item.unit_price * item.suggested_quantity;
 
                   return (
-                    <View key={item.product.id} style={styles.aiOrderItem}>
+                    <View key={item.product_id} style={styles.aiOrderItem}>
                       {/* Item Header */}
                       <View style={styles.aiOrderItemHeader}>
                         <TouchableOpacity
@@ -479,8 +873,8 @@ export default function InventoryScreen() {
                             color={item.isSelected ? Colors.primary.main : Colors.neutral[400]}
                           />
                           <View style={styles.aiItemNameSection}>
-                            <Text style={styles.aiItemName}>{item.product.name}</Text>
-                            <Text style={styles.aiItemSku}>SKU: {item.product.sku}</Text>
+                            <Text style={styles.aiItemName}>{item.product_name}</Text>
+                            <Text style={styles.aiItemSku}>SKU: {item.product_sku}</Text>
                           </View>
                         </TouchableOpacity>
                         <View style={[styles.priorityBadge, { backgroundColor: priorityStyle.bg }]}>
@@ -497,10 +891,10 @@ export default function InventoryScreen() {
                           <Text style={styles.detailLabel}>Current Stock:</Text>
                           <Text style={[
                             styles.detailValue,
-                            item.product.stockStatus === 'out' && styles.detailValueRed,
-                            item.product.stockStatus === 'low' && styles.detailValueOrange
+                            item.current_stock === 0 && styles.detailValueRed,
+                            item.current_stock > 0 && item.current_stock <= item.min_stock && styles.detailValueOrange
                           ]}>
-                            {item.product.currentStock} units
+                            {item.current_stock} units
                           </Text>
                         </View>
                         <View style={styles.detailRow}>
@@ -508,19 +902,19 @@ export default function InventoryScreen() {
                           <View style={styles.qtyInputContainer}>
                             <TouchableOpacity
                               style={styles.qtyButton}
-                              onPress={() => updateAIItemQty(index, item.suggestedQty - 10)}
+                              onPress={() => updateAIItemQty(index, item.suggested_quantity - 10)}
                             >
                               <Ionicons name="remove" size={16} color={Colors.neutral[600]} />
                             </TouchableOpacity>
                             <TextInput
                               style={styles.qtyInput}
-                              value={item.suggestedQty.toString()}
+                              value={item.suggested_quantity.toString()}
                               onChangeText={(text) => updateAIItemQty(index, parseInt(text) || 1)}
                               keyboardType="number-pad"
                             />
                             <TouchableOpacity
                               style={styles.qtyButton}
-                              onPress={() => updateAIItemQty(index, item.suggestedQty + 10)}
+                              onPress={() => updateAIItemQty(index, item.suggested_quantity + 10)}
                             >
                               <Ionicons name="add" size={16} color={Colors.neutral[600]} />
                             </TouchableOpacity>
@@ -528,7 +922,7 @@ export default function InventoryScreen() {
                         </View>
                         <View style={styles.detailRow}>
                           <Text style={styles.detailLabel}>Unit Price:</Text>
-                          <Text style={styles.detailValue}>৳{item.product.unitPrice}</Text>
+                          <Text style={styles.detailValue}>৳{item.unit_price.toFixed(2)}</Text>
                         </View>
                         <View style={[styles.detailRow, styles.detailRowTotal]}>
                           <Text style={styles.detailLabelBold}>Subtotal:</Text>
@@ -582,6 +976,194 @@ export default function InventoryScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Auto Order Modal */}
+      <Modal
+        visible={showAutoOrderModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowAutoOrderModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            {/* Modal Header */}
+            <View style={styles.modalHeader}>
+              <View style={styles.modalHeaderLeft}>
+                <Ionicons name="flash" size={24} color="#f59e0b" />
+                <Text style={styles.modalTitle}>AI Auto Order System</Text>
+              </View>
+              <TouchableOpacity onPress={() => setShowAutoOrderModal(false)}>
+                <Ionicons name="close" size={24} color={Colors.neutral[600]} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Modal Body */}
+            <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+              {loadingAIOrders ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" color={Colors.primary.main} />
+                  <Text style={styles.loadingText}>Analyzing inventory and generating smart orders...</Text>
+                </View>
+              ) : aiOrders.length === 0 ? (
+                <View style={styles.emptyContainer}>
+                  <Ionicons name="checkmark-circle-outline" size={64} color={Colors.success.main} />
+                  <Text style={styles.emptyText}>All Stocked Up!</Text>
+                  <Text style={styles.emptySubtext}>No urgent reorders needed at this time.</Text>
+                </View>
+              ) : (
+                <>
+                  {/* Info Banner */}
+                  <View style={styles.aiInfoBanner}>
+                    <Ionicons name="information-circle-outline" size={20} color={Colors.primary.main} />
+                    <Text style={styles.aiInfoText}>
+                      AI has analyzed your inventory and sales patterns. Select orders to execute automatically.
+                    </Text>
+                  </View>
+
+                  {/* AI Orders List */}
+                  <View style={styles.aiOrderList}>
+                    {aiOrders.map((order) => {
+                      const isSelected = selectedAIOrders.includes(order.id);
+                      const urgencyLevel = order.urgency_level || 'normal';
+                      const urgencyColor = urgencyLevel === 'urgent' ? '#ef4444' :
+                                          urgencyLevel === 'soon' ? '#f59e0b' : '#22c55e';
+
+                      return (
+                        <TouchableOpacity
+                          key={order.id}
+                          style={[styles.autoOrderCard, isSelected && styles.autoOrderCardSelected]}
+                          onPress={() => toggleAIOrderSelection(order.id)}
+                          activeOpacity={0.7}
+                        >
+                          {/* Order Header */}
+                          <View style={styles.autoOrderHeader}>
+                            <View style={styles.autoOrderCheckSection}>
+                              <Ionicons
+                                name={isSelected ? 'checkbox' : 'square-outline'}
+                                size={24}
+                                color={isSelected ? Colors.primary.main : Colors.neutral[400]}
+                              />
+                              <View style={styles.autoOrderSupplierSection}>
+                                <Text style={styles.autoOrderSupplier}>{order.supplier_name}</Text>
+                                <View style={styles.autoOrderMetaRow}>
+                                  <View style={[styles.urgencyBadge, { backgroundColor: `${urgencyColor}15` }]}>
+                                    <Text style={[styles.urgencyText, { color: urgencyColor }]}>
+                                      {urgencyLevel.toUpperCase()}
+                                    </Text>
+                                  </View>
+                                  <Text style={styles.autoOrderMeta}>{order.total_items} products</Text>
+                                </View>
+                              </View>
+                            </View>
+                            <View style={styles.confidenceSection}>
+                              <Text style={styles.confidenceLabel}>Confidence</Text>
+                              <Text style={styles.confidenceValue}>{Math.round(order.confidence_score * 100)}%</Text>
+                            </View>
+                          </View>
+
+                          {/* Order Details */}
+                          <View style={styles.autoOrderDetails}>
+                            <View style={styles.autoOrderDetailRow}>
+                              <Ionicons name="cube-outline" size={16} color={Colors.neutral[500]} />
+                              <Text style={styles.autoOrderDetailText}>
+                                {order.total_quantity} total units
+                              </Text>
+                            </View>
+                            <View style={styles.autoOrderDetailRow}>
+                              <Ionicons name="calendar-outline" size={16} color={Colors.neutral[500]} />
+                              <Text style={styles.autoOrderDetailText}>
+                                Delivery: {order.delivery_estimate}
+                              </Text>
+                            </View>
+                            <View style={styles.autoOrderDetailRow}>
+                              <Ionicons name="information-circle-outline" size={16} color={Colors.neutral[500]} />
+                              <Text style={styles.autoOrderDetailText} numberOfLines={2}>
+                                {order.reason}
+                              </Text>
+                            </View>
+                          </View>
+
+                          {/* Order Total */}
+                          <View style={styles.autoOrderFooter}>
+                            <Text style={styles.autoOrderTotalLabel}>Estimated Total:</Text>
+                            <Text style={styles.autoOrderTotalValue}>৳{(order.total_amount || 0).toLocaleString()}</Text>
+                          </View>
+
+                          {/* Product Preview */}
+                          <View style={styles.productPreview}>
+                            <Text style={styles.productPreviewLabel}>Products:</Text>
+                            <Text style={styles.productPreviewText} numberOfLines={2}>
+                              {order.items?.map(item => item.product_name).join(', ') || 'No products'}
+                            </Text>
+                          </View>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+
+                  {/* Summary */}
+                  {selectedAIOrders.length > 0 && (
+                    <View style={styles.orderSummary}>
+                      <Text style={styles.orderSummaryTitle}>Selected Orders Summary</Text>
+                      <View style={styles.summaryRow}>
+                        <Text style={styles.summaryLabel}>Total Orders:</Text>
+                        <Text style={styles.summaryValue}>{getAutoOrderSummary().totalOrders}</Text>
+                      </View>
+                      <View style={styles.summaryRow}>
+                        <Text style={styles.summaryLabel}>Total Products:</Text>
+                        <Text style={styles.summaryValue}>{getAutoOrderSummary().totalProducts}</Text>
+                      </View>
+                      <View style={styles.summaryRow}>
+                        <Text style={styles.summaryLabel}>Urgent Orders:</Text>
+                        <Text style={[styles.summaryValue, styles.summaryValueUrgent]}>
+                          {getAutoOrderSummary().urgentOrders}
+                        </Text>
+                      </View>
+                      <View style={[styles.summaryRow, styles.summaryRowTotal]}>
+                        <Text style={styles.summaryLabelBold}>Total Cost:</Text>
+                        <Text style={styles.summaryValueLarge}>
+                          ৳{getAutoOrderSummary().totalCost.toLocaleString()}
+                        </Text>
+                      </View>
+                    </View>
+                  )}
+                </>
+              )}
+            </ScrollView>
+
+            {/* Modal Footer */}
+            {!loadingAIOrders && aiOrders.length > 0 && (
+              <View style={styles.modalFooter}>
+                <TouchableOpacity
+                  style={styles.modalButtonSecondary}
+                  onPress={() => setShowAutoOrderModal(false)}
+                >
+                  <Text style={styles.modalButtonSecondaryText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.modalButtonPrimary,
+                    (selectedAIOrders.length === 0 || executingOrders) && styles.modalButtonDisabled
+                  ]}
+                  onPress={handleExecuteAutoOrders}
+                  disabled={selectedAIOrders.length === 0 || executingOrders}
+                >
+                  {executingOrders ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <>
+                      <Ionicons name="flash" size={20} color="#fff" />
+                      <Text style={styles.modalButtonPrimaryText}>
+                        Execute {selectedAIOrders.length} Order(s)
+                      </Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -590,6 +1172,35 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background.default,
+  },
+  
+  // Loading & Empty States
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: Spacing.md,
+  },
+  loadingText: {
+    fontSize: Typography.fontSize.base,
+    color: Colors.neutral[600],
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: Spacing.md,
+    paddingHorizontal: Spacing.xl,
+  },
+  emptyText: {
+    fontSize: Typography.fontSize.lg,
+    fontWeight: Typography.fontWeight.semibold,
+    color: Colors.neutral[700],
+  },
+  emptySubtext: {
+    fontSize: Typography.fontSize.sm,
+    color: Colors.neutral[500],
+    textAlign: 'center',
   },
   
   // AI Alert Strip
@@ -662,11 +1273,31 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.sm,
   },
   stockFilterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: Spacing.md,
+    paddingRight: Spacing.lg,
   },
   filterScrollContent: {
     paddingHorizontal: Spacing.lg,
     gap: Spacing.sm,
+  },
+  selectAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+    backgroundColor: Colors.primary.light + '20',
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: Colors.primary.light,
+  },
+  selectAllText: {
+    fontSize: Typography.fontSize.xs,
+    fontWeight: Typography.fontWeight.semibold,
+    color: Colors.primary.main,
   },
   filterChip: {
     paddingHorizontal: Spacing.lg,
@@ -736,6 +1367,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.xs,
     borderRadius: BorderRadius.sm,
+  },
+  bulkButtonDisabled: {
+    backgroundColor: Colors.neutral[400],
+    opacity: 0.7,
   },
   bulkButtonText: {
     fontSize: Typography.fontSize.xs,
@@ -883,6 +1518,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.md,
+  },
+  reorderButtonDisabled: {
+    backgroundColor: Colors.neutral[400],
+    opacity: 0.7,
   },
   reorderButtonText: {
     fontSize: Typography.fontSize.sm,
@@ -1149,5 +1788,161 @@ const styles = StyleSheet.create({
     fontSize: Typography.fontSize.base,
     fontWeight: Typography.fontWeight.semibold,
     color: '#fff',
+  },
+  modalButtonDisabled: {
+    opacity: 0.5,
+  },
+  
+  // Auto Order Modal Styles
+  autoOrderCard: {
+    backgroundColor: '#fff',
+    borderWidth: 2,
+    borderColor: Colors.border.light,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
+  },
+  autoOrderCardSelected: {
+    borderColor: Colors.primary.main,
+    backgroundColor: 'rgba(99, 102, 241, 0.03)',
+  },
+  autoOrderHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: Spacing.sm,
+  },
+  autoOrderCheckSection: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.sm,
+    flex: 1,
+  },
+  autoOrderSupplierSection: {
+    flex: 1,
+  },
+  autoOrderSupplier: {
+    fontSize: Typography.fontSize.base,
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.neutral[900],
+    marginBottom: 4,
+  },
+  autoOrderMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  urgencyBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: BorderRadius.sm,
+  },
+  urgencyText: {
+    fontSize: 10,
+    fontWeight: Typography.fontWeight.bold,
+    letterSpacing: 0.5,
+  },
+  autoOrderMeta: {
+    fontSize: Typography.fontSize.xs,
+    color: Colors.neutral[600],
+  },
+  confidenceSection: {
+    alignItems: 'flex-end',
+  },
+  confidenceLabel: {
+    fontSize: 10,
+    color: Colors.neutral[500],
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  confidenceValue: {
+    fontSize: Typography.fontSize.lg,
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.success.main,
+  },
+  autoOrderDetails: {
+    gap: Spacing.xs,
+    marginBottom: Spacing.sm,
+    paddingLeft: 32,
+  },
+  autoOrderDetailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+  },
+  autoOrderDetailText: {
+    fontSize: Typography.fontSize.sm,
+    color: Colors.neutral[600],
+    flex: 1,
+  },
+  autoOrderFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: Spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border.light,
+    marginTop: Spacing.xs,
+  },
+  autoOrderTotalLabel: {
+    fontSize: Typography.fontSize.sm,
+    fontWeight: Typography.fontWeight.semibold,
+    color: Colors.neutral[700],
+  },
+  autoOrderTotalValue: {
+    fontSize: Typography.fontSize.xl,
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.primary.main,
+  },
+  productPreview: {
+    marginTop: Spacing.sm,
+    paddingTop: Spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border.light,
+  },
+  productPreviewLabel: {
+    fontSize: 10,
+    fontWeight: Typography.fontWeight.semibold,
+    color: Colors.neutral[500],
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 4,
+  },
+  productPreviewText: {
+    fontSize: Typography.fontSize.xs,
+    color: Colors.neutral[600],
+    lineHeight: 16,
+  },
+  orderSummaryTitle: {
+    fontSize: Typography.fontSize.base,
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.neutral[900],
+    marginBottom: Spacing.sm,
+  },
+  summaryValueUrgent: {
+    color: '#ef4444',
+    fontWeight: Typography.fontWeight.bold,
+  },
+  
+  loadingMore: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    paddingVertical: Spacing.lg,
+  },
+  loadingMoreText: {
+    fontSize: Typography.fontSize.sm,
+    color: Colors.neutral[600],
+  },
+  endOfList: {
+    alignItems: 'center',
+    paddingVertical: Spacing.lg,
+    paddingBottom: Spacing.xl,
+  },
+  endOfListText: {
+    fontSize: Typography.fontSize.sm,
+    color: Colors.neutral[500],
+    fontStyle: 'italic',
   },
 });

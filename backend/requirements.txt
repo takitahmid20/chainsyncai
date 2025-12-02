@@ -18,6 +18,10 @@ faiss-cpu==1.9.0.post1
 # Use a NumPy <2 to satisfy `langchain==0.3.14` dependency constraints
 # and remain compatible with other native extensions (faiss).
 numpy==1.26.4
+# LightGBM for advanced demand forecasting
+lightgbm==4.5.0
+pandas==2.2.3
+scikit-learn==1.5.2
 
 # HTTP requests for Grok API (mailjet-rest requires >=2.32.4)
 requests>=2.32.4

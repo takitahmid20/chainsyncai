@@ -69,15 +69,27 @@ class CartItemView(APIView):
             
             if not created:
                 # Update quantity
-                cart_item.quantity += quantity
+                new_quantity = cart_item.quantity + quantity
                 
-                # Validate against stock
-                if cart_item.quantity > product.stock_quantity:
+                # Validate against stock for cumulative quantity
+                if new_quantity > product.stock_quantity:
                     return Response({
-                        'error': f'Only {product.stock_quantity} items available'
+                        'error': f'Only {product.stock_quantity} items available. You already have {cart_item.quantity} in cart.',
+                        'available_stock': product.stock_quantity,
+                        'current_cart_quantity': cart_item.quantity,
+                        'requested_additional': quantity
                     }, status=status.HTTP_400_BAD_REQUEST)
                 
+                cart_item.quantity = new_quantity
                 cart_item.save()
+            else:
+                # For new items, validate the initial quantity
+                if quantity > product.stock_quantity:
+                    return Response({
+                        'error': f'Only {product.stock_quantity} items available',
+                        'available_stock': product.stock_quantity,
+                        'requested_quantity': quantity
+                    }, status=status.HTTP_400_BAD_REQUEST)
             
             return Response({
                 'message': 'Item added to cart',

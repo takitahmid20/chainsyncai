@@ -137,16 +137,19 @@ class CartItemSerializer(serializers.ModelSerializer):
                     'product': "Product not found"
                 })
         
-        # Check stock availability
+        # Check stock availability - provide detailed error
         if quantity > product.stock_quantity:
             raise serializers.ValidationError({
-                'quantity': f"Only {product.stock_quantity} items available in stock"
+                'quantity': f"Only {product.stock_quantity} items available in stock",
+                'available_stock': product.stock_quantity,
+                'requested_quantity': quantity
             })
         
-        # Check minimum order quantity
-        if quantity < product.minimum_order_quantity:
+        # Check minimum order quantity (skip if 0 or not set)
+        min_order_qty = product.minimum_order_quantity or 0
+        if min_order_qty > 0 and quantity < min_order_qty:
             raise serializers.ValidationError({
-                'quantity': f"Minimum order quantity is {product.minimum_order_quantity}"
+                'quantity': f"Minimum order quantity is {min_order_qty}"
             })
         
         return data

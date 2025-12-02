@@ -34,24 +34,39 @@ class GrokAIService:
             'Content-Type': 'application/json'
         }
     
-    def get_product_sales_history(self, product_id: int, days: int = 90) -> List[Dict[str, Any]]:
-        """
-        Get historical sales data for a product
+    def get_product_sales_history(self, product_id: int, days: int = 90, retailer_id: int = None) -> List[Dict[str, Any]]:
         
-        Args:
-            product_id: Product ID
-            days: Number of days to look back
-            
-        Returns:
-            List of sales records with date, quantity, and revenue
-        """
+        from sales.models import DailySale
         cutoff_date = timezone.now() - timedelta(days=days)
         
-        # Get all order items for this product
+        # If retailer_id provided, get THEIR sales data (local shop sales)
+        if retailer_id:
+            daily_sales = DailySale.objects.filter(
+                retailer_id=retailer_id,
+                product_id=product_id,
+                created_at__gte=cutoff_date
+            ).order_by('sale_date')
+            
+            # Aggregate by date
+            sales_by_date = {}
+            for sale in daily_sales:
+                date_key = sale.sale_date.isoformat()
+                if date_key not in sales_by_date:
+                    sales_by_date[date_key] = {
+                        'date': date_key,
+                        'quantity': 0,
+                        'revenue': 0
+                    }
+                sales_by_date[date_key]['quantity'] += sale.quantity_sold
+                sales_by_date[date_key]['revenue'] += float(sale.total_amount)
+            
+            return list(sales_by_date.values())
+        
+        # Otherwise, get general market sales (order items)
         order_items = OrderItem.objects.filter(
             product_id=product_id,
             order__created_at__gte=cutoff_date,
-            order__status__in=['delivered', 'pending', 'confirmed']
+            order__status__in=['delivered', 'pending', 'accepted']
         ).select_related('order').order_by('order__created_at')
         
         # Aggregate by date
@@ -69,30 +84,54 @@ class GrokAIService:
         
         return list(sales_by_date.values())
     
-    def get_product_inventory_info(self, product_id: int) -> Dict[str, Any]:
-        """Get current inventory information for a product"""
+    def get_retailer_inventory_info(self, product_id: int, retailer_id: int) -> Dict[str, Any]:
+        """Get retailer's shop inventory for a product based on their sales"""
+        from sales.models import DailySale
+        from django.db.models import Sum
+        
         try:
             product = Product.objects.get(id=product_id)
-            # Assuming reorder level is 20% of max stock or minimum 10
-            min_order_qty = product.minimum_order_quantity or 1
-            estimated_reorder_level = max(int(product.stock_quantity * 0.2), min_order_qty)
+            
+            # Calculate retailer's current shop stock from recent sales pattern
+            # Get last 7 days of sales to estimate current inventory
+            recent_sales = DailySale.objects.filter(
+                retailer_id=retailer_id,
+                product_id=product_id,
+                sale_date__gte=timezone.now().date() - timedelta(days=7)
+            ).aggregate(total_sold=Sum('quantity_sold'))['total_sold'] or 0
+            
+            # Get average daily sales from last 30 days
+            monthly_sales = DailySale.objects.filter(
+                retailer_id=retailer_id,
+                product_id=product_id,
+                sale_date__gte=timezone.now().date() - timedelta(days=30)
+            ).aggregate(total_sold=Sum('quantity_sold'))['total_sold'] or 0
+            
+            avg_daily_sales = monthly_sales / 30 if monthly_sales > 0 else 0
+            
+            # Estimate current shop stock (we don't have exact inventory)
+            # Assume retailer keeps 15-30 days worth of stock
+            estimated_shop_stock = max(int(avg_daily_sales * 20), 0)
+            
+            # Reorder level: when stock falls below 7 days of sales
+            reorder_level = max(int(avg_daily_sales * 7), 1)
             
             return {
-                'current_stock': product.stock_quantity,
-                'reorder_level': estimated_reorder_level,
-                'max_stock_level': product.stock_quantity * 2,  # Estimated max
-                'is_low_stock': product.stock_quantity <= estimated_reorder_level,
-                'last_updated': product.updated_at.isoformat(),
-                'minimum_order_quantity': min_order_qty
+                'current_shop_stock': estimated_shop_stock,
+                'avg_daily_sales': avg_daily_sales,
+                'recent_weekly_sales': recent_sales,
+                'reorder_level': reorder_level,
+                'is_low_stock': estimated_shop_stock <= reorder_level,
+                'supplier_stock_available': product.stock_quantity  # For reference
             }
         except Product.DoesNotExist:
             return {
-                'current_stock': 0,
+                'current_shop_stock': 0,
+                'avg_daily_sales': 0,
+                'recent_weekly_sales': 0,
                 'reorder_level': 0,
-                'max_stock_level': 0,
                 'is_low_stock': True,
-                'last_updated': None,
-                'minimum_order_quantity': 1
+                'supplier_stock_available': 0
             }
     
     def forecast_demand(
@@ -121,18 +160,29 @@ class GrokAIService:
                 'product_id': product_id
             }
         
-        # Get sales history
-        sales_history = self.get_product_sales_history(product_id, days=90)
+        # Get sales history (use retailer-specific data if provided)
+        sales_history = self.get_product_sales_history(product_id, days=90, retailer_id=retailer_id)
         
-        # Get inventory info
-        inventory_info = self.get_product_inventory_info(product_id)
+        # Get retailer's shop inventory info (not supplier stock)
+        if retailer_id:
+            inventory_info = self.get_retailer_inventory_info(product_id, retailer_id)
+        else:
+            # Fallback: use basic product info
+            inventory_info = {
+                'current_shop_stock': 0,
+                'avg_daily_sales': 0,
+                'reorder_level': 0,
+                'is_low_stock': True,
+                'supplier_stock_available': product.stock_quantity
+            }
         
-        # Build prompt for Gemini
+        # Build prompt for AI
         prompt = self._build_demand_forecast_prompt(
             product=product,
             sales_history=sales_history,
             inventory_info=inventory_info,
-            forecast_days=forecast_days
+            forecast_days=forecast_days,
+            is_retailer_forecast=(retailer_id is not None)
         )
         
         # Get AI response from Grok
@@ -167,7 +217,7 @@ class GrokAIService:
             forecast_data['product_id'] = product_id
             forecast_data['product_name'] = product.name
             forecast_data['current_price'] = float(product.price)
-            forecast_data['current_stock'] = inventory_info['current_stock']
+            forecast_data['current_stock'] = inventory_info['current_shop_stock']
             forecast_data['forecast_period_days'] = forecast_days
             forecast_data['generated_at'] = timezone.now().isoformat()
             
@@ -197,43 +247,61 @@ class GrokAIService:
         product: Product,
         sales_history: List[Dict],
         inventory_info: Dict,
-        forecast_days: int
+        forecast_days: int,
+        is_retailer_forecast: bool = False
     ) -> str:
-        """Build detailed prompt for Gemini AI"""
+        """Build detailed prompt for AI"""
         
         # Calculate summary statistics
         total_sales = sum(item['quantity'] for item in sales_history)
         avg_daily_sales = total_sales / len(sales_history) if sales_history else 0
         total_revenue = sum(item['revenue'] for item in sales_history)
         
+        if is_retailer_forecast:
+            inventory_context = f"""
+**Retailer's Shop Inventory:**
+- Current Shop Stock (Estimated): {inventory_info['current_shop_stock']} units
+- Average Daily Sales: {inventory_info['avg_daily_sales']:.2f} units/day
+- Recent Week Sales: {inventory_info['recent_weekly_sales']} units
+- Reorder Level: {inventory_info['reorder_level']} units
+- Stock Status: {'⚠️ Low Stock' if inventory_info['is_low_stock'] else '✅ Adequate'}
+"""
+            task_context = "Calculate how many units the retailer should ORDER FROM SUPPLIER to meet customer demand for the next {forecast_days} days."
+        else:
+            inventory_context = f"""
+**Current Inventory Status:**
+- Available Stock: {inventory_info.get('supplier_stock_available', 0)} units
+"""
+            task_context = "Forecast demand for the next {forecast_days} days."
+        
         prompt = f"""
-You are an expert supply chain and demand forecasting AI assistant for a B2B retail platform.
+You are an expert supply chain and demand forecasting AI assistant.
 
-Analyze the following product data and provide a detailed demand forecast:
+Analyze this product and provide a CLEAR demand forecast:
 
 **Product Information:**
 - Name: {product.name}
 - Category: {product.category.name if product.category else 'N/A'}
-- Current Price: ৳{product.price}
-- SKU: {product.sku}
+- Price: ৳{product.price}
 
-**Current Inventory Status:**
-- Current Stock: {inventory_info['current_stock']} units
-- Reorder Level: {inventory_info['reorder_level']} units
-- Max Stock Level: {inventory_info['max_stock_level']} units
-- Low Stock Alert: {'Yes' if inventory_info['is_low_stock'] else 'No'}
+{inventory_context}
 
 **Sales History (Last 90 days):**
 - Total Units Sold: {total_sales}
 - Average Daily Sales: {avg_daily_sales:.2f} units
 - Total Revenue: ৳{total_revenue:.2f}
-- Number of Sales Days: {len(sales_history)}
+- Sales Days: {len(sales_history)}
 
 **Detailed Sales Data:**
 {json.dumps(sales_history, indent=2)}
 
 **Task:**
-Forecast demand for the next {forecast_days} days and provide actionable insights.
+{task_context}
+
+**IMPORTANT for suggested_order_quantity:**
+- Calculate: (predicted_total_demand) - (current_shop_stock)
+- This tells retailer how much to ORDER from supplier
+- If current stock is sufficient, set to 0
 
 **Required Output Format (JSON):**
 {{
@@ -243,25 +311,17 @@ Forecast demand for the next {forecast_days} days and provide actionable insight
     "confidence_level": "<high|medium|low>",
     "trend": "<increasing|stable|decreasing>"
   }},
-  "weekly_forecast": [
-    {{"week": 1, "predicted_demand": <number>, "min_demand": <number>, "max_demand": <number>}},
-    {{"week": 2, "predicted_demand": <number>, "min_demand": <number>, "max_demand": <number>}}
-  ],
   "recommendations": {{
     "should_reorder": <true|false>,
-    "suggested_order_quantity": <number>,
+    "suggested_order_quantity": <number (how much to ORDER, not total demand)>,
     "reorder_urgency": "<urgent|soon|normal|not_needed>",
     "estimated_stockout_date": "<YYYY-MM-DD or null>",
     "risk_assessment": "<high|medium|low>"
   }},
   "insights": [
-    "Insight 1: <detailed insight>",
-    "Insight 2: <detailed insight>",
-    "Insight 3: <detailed insight>"
-  ],
-  "factors_considered": [
-    "Factor 1",
-    "Factor 2"
+    "Insight 1",
+    "Insight 2",
+    "Insight 3"
   ]
 }}
 
@@ -337,7 +397,7 @@ class DemandForecastService:
         max_products: int = 20
     ) -> Dict[str, Any]:
         """
-        Analyze products for a retailer and return prioritized recommendations
+        Analyze products for a retailer based on THEIR sales history and inventory
         
         Args:
             retailer_id: Retailer user ID
@@ -350,29 +410,58 @@ class DemandForecastService:
         """
         from django.db.models import Q, Count, Sum
         from datetime import datetime
+        from sales.models import DailySale
         
-        # Get products with recent sales (prioritize active products)
-        products_with_sales = OrderItem.objects.filter(
-            order__status__in=['delivered', 'confirmed', 'pending'],
-            order__created_at__gte=timezone.now() - timedelta(days=90)
+        # Get products the retailer has been SELLING (their actual inventory)
+        # Look at their sales data to understand what products they sell
+        products_with_sales = DailySale.objects.filter(
+            retailer_id=retailer_id,
+            sale_date__gte=timezone.now().date() - timedelta(days=90)
         ).values('product_id').annotate(
-            total_sales=Sum('quantity')
-        ).order_by('-total_sales')[:max_products]  # Limit to top-selling products
+            total_sales=Sum('quantity_sold')
+        ).order_by('-total_sales')[:max_products]
         
         product_ids = [item['product_id'] for item in products_with_sales]
         
+        if not product_ids:
+            # If no sales history, check what they have ordered before
+            ordered_products = OrderItem.objects.filter(
+                order__retailer_id=retailer_id,
+                order__status__in=['delivered', 'accepted']
+            ).values('product_id').annotate(
+                total_ordered=Sum('quantity')
+            ).order_by('-total_ordered')[:max_products]
+            
+            product_ids = [item['product_id'] for item in ordered_products]
+        
+        if not product_ids:
+            # New retailer with no history - return empty insights
+            return {
+                'retailer_id': retailer_id,
+                'generated_at': timezone.now().isoformat(),
+                'forecast_period_days': forecast_days,
+                'summary': {
+                    'total_products_analyzed': 0,
+                    'products_need_reorder': 0,
+                    'urgent_reorders': 0,
+                    'soon_reorders': 0,
+                    'total_suggested_order_value': 0,
+                    'average_stock_days_remaining': 0
+                },
+                'recommendations': [],
+                'urgent_products': [],
+                'soon_products': [],
+                'trending_up_products': [],
+                'message': 'No sales or purchase history found. Start recording your daily sales to get AI insights!'
+            }
+        
+        # Get the actual products
         products = Product.objects.filter(
             id__in=product_ids,
             status='active'
         ).select_related('category')
         
-        # Also prioritize low-stock products
-        low_stock_products = Product.objects.filter(
-            status='active',
-            stock_quantity__lte=50  # Low stock threshold
-        ).exclude(id__in=product_ids)[:10]  # Add up to 10 low-stock products
-        
-        all_products = list(products) + list(low_stock_products)
+        all_products = list(products)
         
         recommendations = []
         urgent_products = []
@@ -444,12 +533,16 @@ class DemandForecastService:
                 else:
                     quick_insight = f"✅ Stock sufficient for {days_until_stockout or forecast_days} days"
                 
+                # Get retailer's shop inventory for this product
+                shop_inventory = grok_service.get_retailer_inventory_info(product.id, retailer_id)
+                
                 # Create recommendation item
                 recommendation_item = {
                     'product_id': product.id,
                     'product_name': product.name,
                     'product_category': product.category.name if product.category else None,
-                    'current_stock': product.stock_quantity,
+                    'current_shop_stock': shop_inventory['current_shop_stock'],
+                    'avg_daily_sales': round(shop_inventory['avg_daily_sales'], 2),
                     'current_price': float(product.price),
                     'predicted_demand': int(summary.get('predicted_total_demand', 0)),
                     'predicted_daily_average': float(summary.get('predicted_daily_average', 0)),

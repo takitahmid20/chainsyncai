@@ -143,3 +143,60 @@ class AIInsightsResponseSerializer(serializers.Serializer):
     urgent_products = ProductRecommendationItemSerializer(many=True)
     soon_products = ProductRecommendationItemSerializer(many=True)
     trending_up_products = ProductRecommendationItemSerializer(many=True)
+
+
+# ============================================
+# AI Orders Serializers
+# ============================================
+
+class AIOrderItemSerializer(serializers.Serializer):
+    """Serializer for items in an AI order"""
+    product_id = serializers.IntegerField()
+    product_name = serializers.CharField()
+    product_image = serializers.CharField(allow_null=True)
+    quantity = serializers.IntegerField()
+    unit_price = serializers.FloatField()
+    subtotal = serializers.FloatField()
+    predicted_demand = serializers.IntegerField()
+    current_shop_stock = serializers.IntegerField()
+    days_until_stockout = serializers.IntegerField(allow_null=True)
+    urgency = serializers.ChoiceField(choices=['urgent', 'soon', 'normal', 'not_needed'])
+
+
+class AIOrderSerializer(serializers.Serializer):
+    """Serializer for AI-generated order suggestion"""
+    id = serializers.CharField()
+    type = serializers.CharField()
+    supplier_id = serializers.IntegerField()
+    supplier_name = serializers.CharField()
+    title = serializers.CharField()
+    reason = serializers.CharField()
+    confidence_score = serializers.IntegerField()
+    total_items = serializers.IntegerField()
+    total_quantity = serializers.IntegerField()
+    total_amount = serializers.FloatField()
+    items = AIOrderItemSerializer(many=True)
+    forecast_period_days = serializers.IntegerField()
+    estimated_delivery_days = serializers.CharField()
+    generated_at = serializers.CharField()
+    expires_at = serializers.CharField()
+    insights = serializers.ListField(child=serializers.CharField())
+
+
+class AIOrdersRequestSerializer(serializers.Serializer):
+    """Request serializer for AI orders"""
+    max_orders = serializers.IntegerField(
+        required=False,
+        default=5,
+        min_value=1,
+        max_value=10,
+        help_text="Maximum number of order suggestions (1-10)"
+    )
+
+
+class ApproveAIOrderRequestSerializer(serializers.Serializer):
+    """Request serializer for approving AI order"""
+    ai_order_id = serializers.CharField(required=True)
+    delivery_address = serializers.CharField(required=False, allow_blank=True)
+    delivery_contact = serializers.CharField(required=False, allow_blank=True)
+    delivery_notes = serializers.CharField(required=False, allow_blank=True)

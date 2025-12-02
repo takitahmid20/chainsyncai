@@ -11,13 +11,20 @@ const getApiBaseUrl = (): string => {
   const extraApiUrl = Constants.expoConfig?.extra?.apiBaseUrl;
   if (extraApiUrl) return extraApiUrl;
   
-  // Fallback to localhost
-  return 'http://127.0.0.1:8000';
+  // Check if running in production (deployed APK/IPA)
+  const appEnv = Constants.expoConfig?.extra?.appEnv;
+  if (appEnv === 'production') {
+    // Production backend URL (fly.io)
+    return 'https://chainsync-backend-winter-sound-6706.fly.dev';
+  }
+  
+  // Fallback to localhost for development
+  return 'http://172.16.30.89:8000';
 };
 
 export const API_CONFIG = {
   BASE_URL: getApiBaseUrl(),
-  TIMEOUT: 30000, // 30 seconds
+  TIMEOUT: 60000, // 60 seconds
   HEADERS: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
@@ -74,6 +81,28 @@ export const API_ENDPOINTS = {
     ADD_ITEM: '/api/orders/cart/items/',
     UPDATE_ITEM: (id: number) => `/api/orders/cart/items/${id}/`,
     DELETE_ITEM: (id: number) => `/api/orders/cart/items/${id}/`,
+  },
+  
+  // Sales
+  SALES: {
+    RECORD: '/api/sales/record/',
+    DAILY: '/api/sales/daily/',
+    SUMMARY: '/api/sales/summary/',
+    ANALYTICS: '/api/sales/analytics/',
+  },
+  
+  // Finance
+  FINANCE: {
+    LOAN_SUGGESTION: '/api/finance/loan/suggestion/',
+    LOAN_HISTORY: '/api/finance/loan/history/',
+  },
+  
+  // AI
+  AI: {
+    INSIGHTS: '/api/ai/insights/',
+    FORECAST: '/api/ai/forecast/',
+    ORDERS: '/api/ai/orders/',
+    APPROVE_ORDER: '/api/ai/orders/approve/',
   },
 };
 
