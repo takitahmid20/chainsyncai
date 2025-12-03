@@ -9,11 +9,15 @@ def send_verification_email(user, verification_token):
     api_secret = config('MAILJET_SECRET_KEY')
     sender_email = config('MAILJET_SENDER_EMAIL', default='noreply@chainsync.ai')
     sender_name = config('MAILJET_SENDER_NAME', default='ChainSync AI')
-    frontend_url = config('FRONTEND_URL', default='http://localhost:8081')
+    
+    # Use backend URL for verification - it will handle the verification and redirect
+    backend_url = config('BACKEND_URL', default='http://localhost:8000')
+    if settings.IS_PRODUCTION:
+        backend_url = 'https://chainsync-backend-winter-sound-6706.fly.dev'
     
     mailjet = Client(auth=(api_key, api_secret), version='v3.1')
     
-    verification_link = f"{frontend_url}/verify-email?token={verification_token}"
+    verification_link = f"{backend_url}/api/auth/verify-email/?token={verification_token}"
     
     data = {
         'Messages': [

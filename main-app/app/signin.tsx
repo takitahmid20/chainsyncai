@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Platform,
   Alert,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -205,8 +206,7 @@ export default function SignInScreen() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="interactive"
-          nestedScrollEnabled={false}
+          bounces={false}
         >
         {/* Header */}
         <LinearGradient
@@ -226,36 +226,46 @@ export default function SignInScreen() {
 
         {/* Form Content */}
         <View style={styles.content}>
-              <Input
-                label="Email Address"
-                placeholder="your@email.com"
-                value={email}
-                onChangeText={(text) => {
-                  setEmail(text);
-                  setErrors({ ...errors, email: '' });
-                }}
-                error={errors.email}
-                type="email"
-                autoCapitalize="none"
-                editable={!loading}
-              />
+              <View style={styles.formGroup}>
+                <Text style={styles.inputLabel}>Email Address</Text>
+                <TextInput
+                  style={[styles.textInput, errors.email && styles.textInputError]}
+                  placeholder="your@email.com"
+                  placeholderTextColor={Colors.neutral[400]}
+                  value={email}
+                  onChangeText={(text) => {
+                    setEmail(text);
+                    setErrors({ ...errors, email: '' });
+                  }}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  editable={!loading}
+                />
+                {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
+              </View>
 
-              <Input
-                label="Password (6 digits)"
-                placeholder="Enter 6-digit password"
-                value={password}
-                onChangeText={(text) => {
-                  if (/^\d*$/.test(text) && text.length <= 6) {
-                    setPassword(text);
-                    setErrors({ ...errors, password: '' });
-                  }
-                }}
-                error={errors.password}
-                type="password"
-                keyboardType="number-pad"
-                maxLength={6}
-                editable={!loading}
-              />
+              <View style={styles.formGroup}>
+                <Text style={styles.inputLabel}>Password (6 digits)</Text>
+                <View style={styles.passwordContainer}>
+                  <TextInput
+                    style={styles.passwordInput}
+                    placeholder="Enter 6-digit password"
+                    placeholderTextColor={Colors.neutral[400]}
+                    value={password}
+                    onChangeText={(text) => {
+                      if (/^\d*$/.test(text) && text.length <= 6) {
+                        setPassword(text);
+                        setErrors({ ...errors, password: '' });
+                      }
+                    }}
+                    secureTextEntry={true}
+                    keyboardType="number-pad"
+                    maxLength={6}
+                    editable={!loading}
+                  />
+                </View>
+                {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
+              </View>
 
               {/* Quick Login Buttons for Testing */}
               <View style={styles.quickLoginContainer}>
@@ -429,6 +439,52 @@ const styles = StyleSheet.create({
     fontSize: Typography.fontSize.md,
     color: Colors.primary.main,
     fontWeight: Typography.fontWeight.semibold,
+  },
+
+  formGroup: {
+    marginBottom: Spacing.xl,
+  },
+
+  inputLabel: {
+    fontSize: Typography.fontSize.base,
+    fontWeight: Typography.fontWeight.semibold,
+    color: Colors.neutral[700],
+    marginBottom: Spacing.sm,
+  },
+
+  textInput: {
+    backgroundColor: Colors.background.paper,
+    borderWidth: 2,
+    borderColor: Colors.border.light,
+    borderRadius: BorderRadius.md,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    fontSize: Typography.fontSize.base,
+    color: Colors.text.primary,
+  },
+
+  textInputError: {
+    borderColor: Colors.error.main,
+  },
+
+  passwordContainer: {
+    backgroundColor: Colors.background.paper,
+    borderWidth: 2,
+    borderColor: Colors.border.light,
+    borderRadius: BorderRadius.md,
+  },
+
+  passwordInput: {
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    fontSize: Typography.fontSize.base,
+    color: Colors.text.primary,
+  },
+
+  errorText: {
+    fontSize: Typography.fontSize.sm,
+    color: Colors.error.main,
+    marginTop: Spacing.xs,
   },
 
   quickLoginContainer: {

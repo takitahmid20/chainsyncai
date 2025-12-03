@@ -67,36 +67,141 @@ class VerifyEmailView(APIView):
         return self._verify_email(request)
     
     def _verify_email(self, request):
+        from django.http import HttpResponse
+        
         # Support both GET and POST
         token = request.query_params.get('token') or request.data.get('token')
         
         if not token:
-            return Response({
-                'error': 'Verification token is required'
-            }, status=status.HTTP_400_BAD_REQUEST)
+            return self._render_result(
+                success=False,
+                message='Verification token is required'
+            )
         
         try:
             user = User.objects.get(verification_token=token)
             
             if user.is_verified:
-                return Response({
-                    'message': 'Email already verified. You can now login.'
-                }, status=status.HTTP_200_OK)
+                return self._render_result(
+                    success=True,
+                    message='Email already verified. You can now login to the app.',
+                    already_verified=True
+                )
             
             # Verify the user
             user.is_verified = True
             user.verification_token = None  # Clear token after verification
             user.save()
             
-            return Response({
-                'message': 'Email verified successfully! You can now login.',
-                'email': user.email
-            }, status=status.HTTP_200_OK)
+            return self._render_result(
+                success=True,
+                message='Email verified successfully! You can now login to the app.',
+                email=user.email
+            )
             
         except User.DoesNotExist:
-            return Response({
-                'error': 'Invalid or expired verification token'
-            }, status=status.HTTP_400_BAD_REQUEST)
+            return self._render_result(
+                success=False,
+                message='Invalid or expired verification token'
+            )
+    
+    def _render_result(self, success, message, email=None, already_verified=False):
+        """Render HTML page with verification result and app deep link"""
+        from django.http import HttpResponse
+        
+        status_icon = '✅' if success else '❌'
+        status_color = '#10b981' if success else '#ef4444'
+        
+        # Deep link to open the app's signin page
+        deep_link = 'exp://192.168.1.100:8081/--/signin'  # For Expo Go
+        # For production, use: chainsyncai://signin
+        
+        html = f"""
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Email Verification - ChainSync AI</title>
+            <style>
+                * {{
+                    margin: 0;
+                    padding: 0;
+                    box-sizing: border-box;
+                }}
+                body {{
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+                    min-height: 100vh;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 20px;
+                }}
+                .container {{
+                    background: white;
+                    border-radius: 16px;
+                    padding: 40px;
+                    max-width: 500px;
+                    width: 100%;
+                    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+                    text-align: center;
+                }}
+                .icon {{
+                    font-size: 64px;
+                    margin-bottom: 20px;
+                }}
+                h1 {{
+                    color: {status_color};
+                    font-size: 28px;
+                    margin-bottom: 16px;
+                }}
+                p {{
+                    color: #6b7280;
+                    font-size: 16px;
+                    line-height: 1.6;
+                    margin-bottom: 30px;
+                }}
+                .button {{
+                    display: inline-block;
+                    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+                    color: white;
+                    padding: 14px 32px;
+                    border-radius: 8px;
+                    text-decoration: none;
+                    font-weight: 600;
+                    font-size: 16px;
+                    transition: transform 0.2s, box-shadow 0.2s;
+                }}
+                .button:hover {{
+                    transform: translateY(-2px);
+                    box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
+                }}
+                .footer {{
+                    margin-top: 30px;
+                    padding-top: 20px;
+                    border-top: 1px solid #e5e7eb;
+                    color: #9ca3af;
+                    font-size: 14px;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="icon">{status_icon}</div>
+                <h1>{'Verification Successful!' if success else 'Verification Failed'}</h1>
+                <p>{message}</p>
+                {'<p style="color: #6366f1; font-weight: 500;">' + email + '</p>' if email else ''}
+                <a href="{deep_link}" class="button">Open ChainSync AI App</a>
+                <div class="footer">
+                    <p>If the app doesn't open automatically, please open the ChainSync AI app manually.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+        return HttpResponse(html, content_type='text/html')
 
 
 class ResendVerificationView(APIView):

@@ -8,17 +8,29 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "APP_ENV": "development",
+        "API_BASE_URL": "http://172.16.30.89:8000"
       }
     },
     "preview": {
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "APP_ENV": "production",
+        "API_BASE_URL": "https://chainsync-backend-winter-sound-6706.fly.dev"
       }
     },
     "production": {
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "APP_ENV": "production",
+        "API_BASE_URL": "https://chainsync-backend-winter-sound-6706.fly.dev"
       }
     }
   },

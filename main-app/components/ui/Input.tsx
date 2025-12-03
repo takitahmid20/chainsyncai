@@ -59,7 +59,6 @@ export const Input: React.FC<InputProps> = ({
           secureTextEntry={shouldShowPassword}
           keyboardType={type === 'email' ? 'email-address' : 'default'}
           autoCapitalize={type === 'email' ? 'none' : 'sentences'}
-          showSoftInputOnFocus={true}
           {...props}
         />
         
